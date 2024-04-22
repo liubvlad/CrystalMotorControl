@@ -5,33 +5,69 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CrystalMotorControl"
         mc:Ignorable="d"
-        Title="MainWindow" Height="300" Width="500">
+        Title="MainWindow" Height="720" Width="1024"
+        FontSize="32">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="5">
-            <ComboBox ItemsSource="{Binding AvailablePorts}" SelectedItem="{Binding SelectedPort}" Width="100"/>
-            <Button Content="Обновить" Click="RefreshPortsButton_Click" Margin="5"/>
-            <Button x:Name="ConnectButton" Content="Подключить" Click="ConnectButton_Click" Margin="5"/>
-            <TextBlock Text="Подключено: " Margin="5"/>
-            <Ellipse x:Name="connectedIndicator"  Width="10" Height="10" Fill="Red" Margin="5"/>
+        <StackPanel Grid.Row="0" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Center" 
+                    Margin="10"
+                    Height="100">
+            <ComboBox ItemsSource="{Binding AvailablePorts}" SelectedItem="{Binding SelectedPort}" Width="300" Margin="10"/>
+            <Button Content="Обновить" Click="RefreshPortsButton_Click" Margin="30 5"/>
+            <Button x:Name="ConnectButton" Content="Подключить" Click="ConnectButton_Click" Margin="30 5"/>
+            <TextBlock Text="Статус: " Margin="5" VerticalAlignment="Center"/>
+            <Ellipse x:Name="connectedIndicator"  Width="30" Height="30" Fill="Red" Margin="5"/>
         </StackPanel>
 
-        <StackPanel Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center">
-            <StackPanel Orientation="Horizontal" Margin="5">
-                <Button Content="Домой" Click="HomeButton_Click" Margin="5"/>
-                <Button Content="Сброс" Click="HomeReset_Click" Margin="5"/>
-                <TextBox Text="{Binding MoveValue, UpdateSourceTrigger=PropertyChanged}" Width="50" Margin="5"/>
-                <Button Content="Влево" Click="LeftButton_Click" Margin="5"/>
-                <Button Content="Вправо" Click="RightButton_Click" Margin="5"/>
+        <StackPanel Grid.Row="1" 
+                    Orientation="Vertical" 
+                    HorizontalAlignment="Center">
+            <StackPanel Orientation="Horizontal" 
+                        Margin="20"
+                        Height="88">
+                <TextBlock x:Name="tbSliderValue" 
+                           Text="{Binding MoveValue, UpdateSourceTrigger=PropertyChanged}" 
+                           Margin="5" 
+                           MinWidth="150" 
+                           HorizontalAlignment="Right"
+                           TextAlignment="Center"
+                           />
+                <Slider x:Name="slider" Value="{Binding MoveValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                        Width="250" 
+                        Margin="20"
+                        VerticalAlignment="Center" 
+                        TickPlacement="Both" 
+                        SmallChange="1" 
+                        LargeChange="0" 
+                        IsSnapToTickEnabled="True"
+                        TickFrequency="1"
+                        />
+
+                <TextBox Text="{Binding MoveValue, UpdateSourceTrigger=PropertyChanged}" Width="150" Margin="5"/>
+
+                <Button Content="Влево" Click="LeftButton_Click" Margin="10 5"/>
+                <Button Content="Вправо" Click="RightButton_Click" Margin="10 5"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="5">
+                <Button Content="Домой" Click="HomeButton_Click" Margin="20 5"/>
+                <Grid x:Name="gridOpEnd" Width="40" Height="40" Background="IndianRed"/>
+                <Button Content="Сброс" Click="HomeReset_Click" Margin="20 5"/>
+                <Button Content="Цикл &lt;-" Tag="Left" Click="ButtonLoopDirection_Click" Margin="20 5"/>
+                <Button Content="Цикл ->" Tag="Right" Click="ButtonLoopDirection_Click" Margin="20 5"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="5"
+                        HorizontalAlignment="Center">
                 <TextBlock Text="Текущее положение: " Margin="5"/>
-                <TextBlock x:Name="tbPos" Text="{Binding Position, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Margin="5" MinWidth="100"/>
-                <Grid x:Name="gridOpEnd" Width="20" Height="20" Background="IndianRed"/>
+                <TextBlock x:Name="tbPos" 
+                           Text="{Binding Position, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                           Margin="5" 
+                           MinWidth="150"/>
             </StackPanel>
         </StackPanel>
     </Grid>

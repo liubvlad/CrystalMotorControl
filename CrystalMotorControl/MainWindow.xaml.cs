@@ -3,6 +3,7 @@
     using System;
     using System.Collections.ObjectModel;
     using System.IO.Ports;
+    using System.Linq;
     using System.Threading.Tasks;
     using System.Windows;
     using System.Windows.Media;
@@ -20,7 +21,7 @@
         public ObservableCollection<string> AvailablePorts { get; set; } = new ObservableCollection<string>();
         public string SelectedPort { get; set; }
         public string Position { get; set; }
-        public string MoveValue { get; set; }
+        public double MoveValue { get; set; }
 
         public MainWindow()
         {
@@ -29,6 +30,9 @@
 
             RefreshPortList();
 
+            _positionTimer = new DispatcherTimer();
+            _positionTimer.Interval = TimeSpan.FromMilliseconds(250); // Период запроса текущего положения (5 секунд)
+            _positionTimer.Tick += PositionTimer_Tick;
 
             _positionTimer = new DispatcherTimer();
             _positionTimer.Interval = TimeSpan.FromMilliseconds(250); // Период запроса текущего положения (5 секунд)
@@ -41,6 +45,11 @@
             foreach (var port in SerialPort.GetPortNames())
             {
                 AvailablePorts.Add(port);
+            }
+
+            if (AvailablePorts.Count > 0)
+            {
+                SelectedPort = AvailablePorts.FirstOrDefault();
             }
         }
 
@@ -183,7 +192,7 @@
         {
             try
             {
-                if (_isConnected && !string.IsNullOrEmpty(MoveValue))
+                if (_isConnected && !string.IsNullOrEmpty(MoveValue.ToString()))
                 {
                     // Отправляем команду "влево" с указанным значением
                     _serialPort.WriteLine($"move {MoveValue}");
@@ -196,7 +205,7 @@
         {
             try
             {
-                if (_isConnected && !string.IsNullOrEmpty(MoveValue))
+                if (_isConnected && !string.IsNullOrEmpty(MoveValue.ToString()))
                 {
                     // Отправляем команду "вправо" с указанным значением
                     _serialPort.WriteLine($"move -{MoveValue}");
@@ -205,6 +214,10 @@
             catch { }
         }
 
-
+        private void ButtonLoopDirection_Click(object sender, RoutedEventArgs e)
+        {
+            // TEMP DEBUG
+            MessageBox.Show(slider.Value.ToString());
+        }
     }
 }
