@@ -1,9 +1,9 @@
-﻿<Window x:Class="ArduinoMotoControl.MainWindow"
+﻿<Window x:Class="CrystalMotorControl.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ArduinoMotoControl"
+        xmlns:local="clr-namespace:CrystalMotorControl"
         mc:Ignorable="d"
         Title="MainWindow" Height="300" Width="500">
     <Grid>
@@ -23,14 +23,14 @@
         <StackPanel Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center">
             <StackPanel Orientation="Horizontal" Margin="5">
                 <Button Content="Домой" Click="HomeButton_Click" Margin="5"/>
-                <TextBox Text="{Binding LeftValue, UpdateSourceTrigger=PropertyChanged}" Width="50" Margin="5"/>
+                <Button Content="Сброс" Click="HomeReset_Click" Margin="5"/>
+                <TextBox Text="{Binding MoveValue, UpdateSourceTrigger=PropertyChanged}" Width="50" Margin="5"/>
                 <Button Content="Влево" Click="LeftButton_Click" Margin="5"/>
-                <TextBox Text="{Binding RightValue, UpdateSourceTrigger=PropertyChanged}" Width="50" Margin="5"/>
                 <Button Content="Вправо" Click="RightButton_Click" Margin="5"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="5">
                 <TextBlock Text="Текущее положение: " Margin="5"/>
-                <TextBlock Text="{Binding Position}" Margin="5" MinWidth="100"/>
+                <TextBlock x:Name="tbPos" Text="{Binding Position, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Margin="5" MinWidth="100"/>
                 <Grid x:Name="gridOpEnd" Width="20" Height="20" Background="IndianRed"/>
             </StackPanel>
         </StackPanel>

@@ -1,7 +1,7 @@
-﻿<Application x:Class="ArduinoMotoControl.App"
+﻿<Application x:Class="CrystalMotorControl.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:ArduinoMotoControl"
+             xmlns:local="clr-namespace:CrystalMotorControl"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
          

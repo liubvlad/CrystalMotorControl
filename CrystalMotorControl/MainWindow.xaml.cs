@@ -1,4 +1,4 @@
-﻿namespace ArduinoMotoControl
+﻿namespace CrystalMotorControl
 {
     using System;
     using System.Collections.ObjectModel;
@@ -20,8 +20,7 @@
         public ObservableCollection<string> AvailablePorts { get; set; } = new ObservableCollection<string>();
         public string SelectedPort { get; set; }
         public string Position { get; set; }
-        public string LeftValue { get; set; }
-        public string RightValue { get; set; }
+        public string MoveValue { get; set; }
 
         public MainWindow()
         {
@@ -32,7 +31,7 @@
 
 
             _positionTimer = new DispatcherTimer();
-            _positionTimer.Interval = TimeSpan.FromSeconds(1); // Период запроса текущего положения (5 секунд)
+            _positionTimer.Interval = TimeSpan.FromMilliseconds(250); // Период запроса текущего положения (5 секунд)
             _positionTimer.Tick += PositionTimer_Tick;
         }
 
@@ -50,14 +49,9 @@
             RefreshPortList();
         }
 
-        private async Task OpticalIndicatorDoAsync()
+        private void OpticalIndicatorDo(bool enabled)
         {
-            var defaultColor = gridOpEnd.Background;
-
-            gridOpEnd.Background = Brushes.Green;
-            await Task.Delay(500);
-
-            gridOpEnd.Background = defaultColor;
+            gridOpEnd.Background = enabled ? Brushes.Green : (Brush)Brushes.IndianRed;
         }
 
         private void ConnectToArduino()
@@ -121,18 +115,22 @@
             {
                 if (_isConnected)
                 {
-                    string receivedData = _serialPort.ReadExisting();
+                    string receivedData = _serialPort.ReadExisting().Trim();
 
-                    if (receivedData.StartsWith("curTarg="))
+                    if (receivedData.StartsWith("current="))
                     {
-                        var value = receivedData.Replace("curTarg=", string.Empty);
-
-                        Position = receivedData.Trim();
+                        var value = receivedData.Replace("current=", string.Empty);
+                        Position = value.Trim();
+                        Dispatcher.Invoke(() => tbPos.Text = Position);
                     }
 
-                    if (receivedData.StartsWith("optical"))
+                    if (receivedData.Contains("optical"))
                     {
-                        await OpticalIndicatorDoAsync();
+                        Dispatcher.Invoke(() => OpticalIndicatorDo(true));
+                    }
+                    if (receivedData.Contains("deoptical"))
+                    {
+                        Dispatcher.Invoke(() => OpticalIndicatorDo(false));
                     }
                 }
             }
@@ -148,7 +146,7 @@
             {
                 if (_isConnected)
                 {
-                    _serialPort.WriteLine("targ"); // Отправляем команду для запроса текущего положения
+                    _serialPort.WriteLine("current"); // Отправляем команду для запроса текущего положения
                 }
             }
             catch { }
@@ -156,8 +154,6 @@
 
         private void HomeButton_Click(object sender, RoutedEventArgs e)
         {
-            OpticalIndicatorDoAsync();
-
             try
             {
                 if (_isConnected)
@@ -169,14 +165,28 @@
             catch { }
         }
 
+        private void HomeReset_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (_isConnected)
+                {
+                    // Отправляем команду "установку домой"
+                    _serialPort.WriteLine("sethome");
+                }
+            }
+            catch { }
+
+        }
+
         private void LeftButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                if (_isConnected && !string.IsNullOrEmpty(LeftValue))
+                if (_isConnected && !string.IsNullOrEmpty(MoveValue))
                 {
                     // Отправляем команду "влево" с указанным значением
-                    _serialPort.WriteLine($"left {LeftValue}");
+                    _serialPort.WriteLine($"move {MoveValue}");
                 }
             }
             catch { }
@@ -186,13 +196,15 @@
         {
             try
             {
-                if (_isConnected && !string.IsNullOrEmpty(RightValue))
+                if (_isConnected && !string.IsNullOrEmpty(MoveValue))
                 {
                     // Отправляем команду "вправо" с указанным значением
-                    _serialPort.WriteLine($"right {RightValue}");
+                    _serialPort.WriteLine($"move -{MoveValue}");
                 }
             }
             catch { }
         }
+
+
     }
 }
