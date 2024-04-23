@@ -4,73 +4,83 @@
     using System.Collections.ObjectModel;
     using System.IO.Ports;
     using System.Linq;
-    using System.Threading.Tasks;
     using System.Windows;
+    using System.Windows.Controls;
     using System.Windows.Media;
     using System.Windows.Threading;
 
     /// <summary>
     /// Логика взаимодействия для MainWindow.xaml
     /// </summary>
+    /// 
+
+
     public partial class MainWindow : Window
     {
         private SerialPort _serialPort;
         private bool _isConnected = false;
         private readonly DispatcherTimer _positionTimer;
 
-        public ObservableCollection<string> AvailablePorts { get; set; } = new ObservableCollection<string>();
-        public string SelectedPort { get; set; }
         public string Position { get; set; }
         public double MoveValue { get; set; }
+
+        private bool Direction = true;
 
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = this;
+            //DataContext = this;
 
-            RefreshPortList();
-
-            _positionTimer = new DispatcherTimer();
-            _positionTimer.Interval = TimeSpan.FromMilliseconds(250); // Период запроса текущего положения (5 секунд)
-            _positionTimer.Tick += PositionTimer_Tick;
 
             _positionTimer = new DispatcherTimer();
-            _positionTimer.Interval = TimeSpan.FromMilliseconds(250); // Период запроса текущего положения (5 секунд)
+            _positionTimer.Interval = TimeSpan.FromMilliseconds(200);
             _positionTimer.Tick += PositionTimer_Tick;
+
+            SearchArduinoAndConnect();
+
+
+
+            ColorDirectionButtons();
         }
 
-        private void RefreshPortList()
+        private void SearchArduinoAndConnect()
         {
-            AvailablePorts.Clear();
-            foreach (var port in SerialPort.GetPortNames())
+            var ports = SerialPort.GetPortNames();
+
+            if (ports.Length < 0)
             {
-                AvailablePorts.Add(port);
+                MessageBox.Show("Нет устройств для подключения!");
             }
 
-            if (AvailablePorts.Count > 0)
+
+            foreach (var port in ports)
             {
-                SelectedPort = AvailablePorts.FirstOrDefault();
+                try
+                {
+                    // TODO автопоиск
+                    ConnectToArduino(port);
+
+                    Title = "Подключено к " + port;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"TEMP {ex.Message}");
+                }
             }
+
+
+
+
         }
 
-        private void RefreshPortsButton_Click(object sender, RoutedEventArgs e)
-        {
-            RefreshPortList();
-        }
 
-        private void OpticalIndicatorDo(bool enabled)
+        private void ConnectToArduino(string port)
         {
-            gridOpEnd.Background = enabled ? Brushes.Green : (Brush)Brushes.IndianRed;
-        }
-
-        private void ConnectToArduino()
-        {
-            _serialPort = new SerialPort(SelectedPort, 9600);
+            _serialPort = new SerialPort(port, 9600);
             _serialPort.Open();
             _serialPort.DataReceived += SerialPort_DataReceived;
 
             _isConnected = true;
-            ConnectButton.Content = "Отключить";
 
             _positionTimer.Start();
 
@@ -83,13 +93,15 @@
             _serialPort.Close();
 
             _isConnected = false;
-            ConnectButton.Content = "Подключить";
 
             connectedIndicator.Fill = Brushes.Red;
         }
 
+        [Obsolete]
         private void ConnectButton_Click(object sender, RoutedEventArgs e)
         {
+            var SelectedPort = "stub";
+
             if (!_isConnected)
             {
                 if (string.IsNullOrEmpty(SelectedPort))
@@ -100,9 +112,8 @@
 
                 try
                 {
-                    ConnectToArduino();
+                    ConnectToArduino(SelectedPort);
                     //MessageBox.Show("Подключено к " + SelectedPort, "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-                    Title = "Подключено к " + SelectedPort;
                 }
                 catch (Exception ex)
                 {
@@ -126,9 +137,9 @@
                 {
                     string receivedData = _serialPort.ReadExisting().Trim();
 
-                    if (receivedData.StartsWith("current="))
+                    if (receivedData.StartsWith("currentDeg="))
                     {
-                        var value = receivedData.Replace("current=", string.Empty);
+                        var value = receivedData.Replace("currentDeg=", string.Empty);
                         Position = value.Trim();
                         Dispatcher.Invoke(() => tbPos.Text = Position);
                     }
@@ -155,24 +166,12 @@
             {
                 if (_isConnected)
                 {
-                    _serialPort.WriteLine("current"); // Отправляем команду для запроса текущего положения
+                    _serialPort.WriteLine("currentDeg"); // Отправляем команду для запроса текущего положения
                 }
             }
             catch { }
         }
 
-        private void HomeButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (_isConnected)
-                {
-                    // Отправляем команду "домой"
-                    _serialPort.WriteLine("home");
-                }
-            }
-            catch { }
-        }
 
         private void HomeReset_Click(object sender, RoutedEventArgs e)
         {
@@ -188,36 +187,75 @@
 
         }
 
-        private void LeftButton_Click(object sender, RoutedEventArgs e)
+
+
+        private void OpticalIndicatorDo(bool enabled)
+        {
+            clock.Background = enabled ? Brushes.Green : (Brush)Brushes.IndianRed;
+        }
+
+        private void LeftDirectionButton_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void buttonLeftDir_Click(object sender, RoutedEventArgs e)
+        {
+            Direction = false;
+            ColorDirectionButtons();
+        }
+
+        private void buttonRightDir_Click(object sender, RoutedEventArgs e)
+        {
+            Direction = true;
+            ColorDirectionButtons();
+        }
+
+        private void ColorDirectionButtons()
+        {
+            if (Direction)
+            {
+                buttonRightDir.Background = Brushes.Wheat;
+                buttonLeftDir.Background = Brushes.White;
+            }
+            else
+            {
+                buttonRightDir.Background = Brushes.White;
+                buttonLeftDir.Background = Brushes.Wheat;
+            }
+        }
+
+        private void ButtonDegMove_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (_isConnected)
+                {
+                    var senderButton = sender as Button;
+                    var value = senderButton.Content.ToString().TrimEnd('°');
+
+                    // Отправляем команду "влево" с указанным значением
+                    var sign = Direction ? "-" : "";
+                    _serialPort.WriteLine($"moveDeg {sign}{value}");
+                }
+            }
+            catch { }
+
+        }
+
+        private void GoButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 if (_isConnected && !string.IsNullOrEmpty(MoveValue.ToString()))
                 {
                     // Отправляем команду "влево" с указанным значением
-                    _serialPort.WriteLine($"moveDeg {MoveValue}");
+                    var sign = Direction ? "-" : "";
+                    // TODO fix textBoxInput
+                    _serialPort.WriteLine($"moveDeg {sign}{textBoxInput.Text.ToString()}");
                 }
             }
             catch { }
-        }
-
-        private void RightButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (_isConnected && !string.IsNullOrEmpty(MoveValue.ToString()))
-                {
-                    // Отправляем команду "вправо" с указанным значением
-                    _serialPort.WriteLine($"moveDeg -{MoveValue}");
-                }
-            }
-            catch { }
-        }
-
-        private void ButtonLoopDirection_Click(object sender, RoutedEventArgs e)
-        {
-            // TEMP DEBUG
-            MessageBox.Show(slider.Value.ToString());
         }
     }
 }
