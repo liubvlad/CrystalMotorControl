@@ -195,7 +195,7 @@
                 if (_isConnected && !string.IsNullOrEmpty(MoveValue.ToString()))
                 {
                     // Отправляем команду "влево" с указанным значением
-                    _serialPort.WriteLine($"move {MoveValue}");
+                    _serialPort.WriteLine($"moveDeg {MoveValue}");
                 }
             }
             catch { }
@@ -208,7 +208,7 @@
                 if (_isConnected && !string.IsNullOrEmpty(MoveValue.ToString()))
                 {
                     // Отправляем команду "вправо" с указанным значением
-                    _serialPort.WriteLine($"move -{MoveValue}");
+                    _serialPort.WriteLine($"moveDeg -{MoveValue}");
                 }
             }
             catch { }

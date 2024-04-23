@@ -1,6 +1,5 @@
 void SerialPrintMsgValue(String msg, float val){
   String strOut = msg + val;
-  strOut += strOut + '\n';
   Serial.println(strOut); 
 }
 
@@ -12,39 +11,72 @@ void serialEvent() {
 
     // Найдем позицию первого пробела
     int spaceIndex = input.indexOf(' ');
-    String command;
+    String command, value;
     
     // Если пробел найден, разделим строку на команду и значение
     if (spaceIndex != -1) {
       command = input.substring(0, spaceIndex);
-      //value = input.substring(spaceIndex + 1).toInt();
+      value = input.substring(spaceIndex + 1);
     } else {
       command = input;
     }
     
-    if (command == "start") {
-      //start();
-    } else if (command == "break") {
+    // *****
+
+    if (command == "ping") {
+      Serial.println("pong");
+    }
+    else if (command == "break") {
       stepper.brake();
-    } else if (command == "stop") {
+    }
+    else if (command == "stop") {
       stepper.stop();
-    } else if (command == "left") {
-      int32_t stepsLeft = command.substring(spaceIndex + 1).toInt();
-      stepper.setTarget(stepsLeft, RELATIVE);
-    } else if (command == "right") {
-      int32_t stepsRight = command.substring(spaceIndex + 1).toInt();
-      stepper.setTarget(-stepsRight, RELATIVE);
-    } else if (command == "move") {
-      int32_t stepsPos = command.substring(spaceIndex + 1).toInt();
-      stepper.setTarget(stepsPos);
-    } else if (command == "home") {
-      home();
-    } else if (command == "targ") {
-      int value = input.substring(spaceIndex + 1).toInt();
-      SerialPrintMsgValue("curTarg=", value);
-    } else if (command == "targDeg") {
-      float value = input.substring(spaceIndex + 1).toFloat();
-      SerialPrintMsgValue("curTargDeg=", value);
+    }
+
+
+    else if (command == "moveTo") {
+      int32_t moveStepsTo = value.toInt();
+      stepper.setTarget(moveStepsTo);
+    }
+    else if (command == "move") {
+      int32_t moveSteps = value.toInt();
+      stepper.setTarget(moveSteps, RELATIVE);
+    }
+    else if (command == "moveDegTo") {
+      float moveDegTo = value.toFloat();
+      stepper.setTargetDeg(moveDegTo);
+    }
+    else if (command == "moveDeg") {
+      int32_t moveDeg = value.toInt();
+      stepper.setTargetDeg(moveDeg, RELATIVE);
+    }
+
+    else if (command == "home") {
+      stepper.setTarget(0);
+    }
+    else if (command == "sethome") {
+      shouldSetHome = true;
+      stepper.setTarget(STEPS_ON_TURN, RELATIVE);
+    } 
+    
+    
+    else if (command == "targ") {
+      int targ = stepper.getTarget();
+      SerialPrintMsgValue("targ=", targ);
+    }
+    else if (command == "targDeg") {
+      float targDeg = stepper.getTargetDeg();
+      SerialPrintMsgValue("targDeg=", targDeg);
+    }
+    
+
+    else if (command == "current") {
+      int current = stepper.getCurrent();
+      SerialPrintMsgValue("current=", current);
+    }
+    else if (command == "currentDeg") {
+      float currentDeg = stepper.getCurrentDeg();
+      SerialPrintMsgValue("currentDeg=", currentDeg);
     }
   }
 

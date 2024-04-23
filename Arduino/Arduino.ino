@@ -1,12 +1,15 @@
 // https://github.com/GyverLibs/GyverStepper/tree/main/src
 #include <GyverStepper.h>
 
-#define PIN_OpticSensor 9 // концевик на D9
+#define STEPS_ON_TURN 3200
+#define PIN_OpticSensor 3 // концевик на 
 
-GStepper<STEPPER2WIRE> stepper(3200, 2, 5, 8);
+GStepper<STEPPER2WIRE> stepper(STEPS_ON_TURN, 2, 5, 8);
 
 static uint32_t prevOpticMillis = 0;
 static uint32_t prevTimerMillis = 0;
+
+bool shouldSetHome = false;
 
 void setup() {
   Serial.begin(9600);
@@ -27,16 +30,30 @@ void home() {
 
 
 void opticalEndCheck() {
+  static bool opticalStateIn = false;
   uint32_t currentMillis = millis();
 
-  if (currentMillis - prevOpticMillis >= 100) {
+  if (currentMillis - prevOpticMillis >= 10) {
     prevOpticMillis = currentMillis;
     
-    sensorValue = digitalRead(PIN_OpticSensor);
+    bool sensorValue = digitalRead(PIN_OpticSensor);
     
     if (sensorValue == HIGH) {
+      if (opticalStateIn) return;
+
+      opticalStateIn = true;
       Serial.println("optical");
-    } 
+      if (shouldSetHome) {
+        shouldSetHome = false;
+        stepper.reset();
+      }
+    }
+    else {
+      if (!opticalStateIn) return;
+
+      opticalStateIn = false;
+      Serial.println("deoptical");
+    }
   }
 }
 
@@ -47,7 +64,7 @@ void timer() {
   if (currentMillis - prevTimerMillis >= 3000) {
     prevTimerMillis = currentMillis;
     
-    Serial.println("timer_3sec");
+    ///Serial.println("timer_3sec");
   }
 }
 
