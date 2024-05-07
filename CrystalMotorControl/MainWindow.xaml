@@ -6,6 +6,7 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="900" Width="1600"
         FontSize="36"
+        Activated="Window_Activated"
         FontFamily="Consolas">
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -41,13 +42,12 @@
                      Margin="10"/>
         </StackPanel>
 
-        <Grid x:Name="clock"
-              Grid.Row="1"
-              Grid.Column="0"
-              Grid.RowSpan="3"
-              Background="DarkRed">
-            
-        </Grid>
+        <UserControl x:Name="sliderControl"
+                 Grid.Row="1"
+                 Grid.Column="0"
+                 Grid.RowSpan="3"
+                 Background="LightGray"
+                />
 
         <Button Grid.Row="4" Content="Поиск дома" Margin="20" Click="HomeReset_Click" />
 
@@ -65,9 +65,9 @@
         <Button  Grid.Row="3" Grid.Column="3" Content="GO" Margin="10" Click="GoButton_Click"/>
 
         
-        <Button x:Name="buttonLeftDir" Grid.Row="4" Grid.Column="1" Content="ЛЕВ" Margin="10" Click="buttonLeftDir_Click" />
-        <Button x:Name="buttonStartStop" Grid.Row="4" Grid.Column="2" Content="СТАРТ" Margin="10"/>
-        <Button x:Name="buttonRightDir" Grid.Row="4" Grid.Column="3" Content="ПРАВ" Margin="10" Click="buttonRightDir_Click"/>
+        <Button x:Name="buttonLeftDir" Grid.Row="4" Grid.Column="1" Content="ЛЕВ" Margin="10" Click="ButtonLeftDir_Click" />
+        <Button x:Name="buttonStartStop" Grid.Row="4" Grid.Column="2" Content="СТАРТ" Margin="10" Click="buttonStartStop_Click"/>
+        <Button x:Name="buttonRightDir" Grid.Row="4" Grid.Column="3" Content="ПРАВ" Margin="10" Click="ButtonRightDir_Click"/>
 
 
         <StackPanel Grid.Row="6"
@@ -82,5 +82,9 @@
                        Margin="5" 
                        MinWidth="150"/>
         </StackPanel>
+
+        <TextBox x:Name="tbLog" Grid.Row="0" Grid.Column="4"
+                 Grid.RowSpan="7"
+                 />
     </Grid>
 </Window>

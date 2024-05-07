@@ -9,38 +9,69 @@
     using System.Windows.Media;
     using System.Windows.Threading;
 
-    /// <summary>
-    /// Логика взаимодействия для MainWindow.xaml
-    /// </summary>
-    /// 
+    
+    public enum Directions
+    {
+        Left = 1,
+        Right = 2,
+    }
 
+    public enum MoveState
+    {
+        Stop = 0,
+        Moving = 1,
+    }
 
     public partial class MainWindow : Window
     {
         private SerialPort _serialPort;
         private bool _isConnected = false;
         private readonly DispatcherTimer _positionTimer;
+        private readonly DispatcherTimer _loopMovingTimer;
 
         public string Position { get; set; }
         public double MoveValue { get; set; }
 
-        private bool Direction = true;
+        public MoveState State { get; private set; } = MoveState.Stop;
+        public Directions Direction { get;  private set; } = Directions.Right;
 
         public MainWindow()
         {
             InitializeComponent();
             //DataContext = this;
 
+            sliderControl.Content = new CircularControl();
 
             _positionTimer = new DispatcherTimer();
             _positionTimer.Interval = TimeSpan.FromMilliseconds(200);
             _positionTimer.Tick += PositionTimer_Tick;
 
+
+            _loopMovingTimer = new DispatcherTimer();
+            _loopMovingTimer.Interval = TimeSpan.FromMilliseconds(5000);
+            _loopMovingTimer.Tick += LoopMovingTimer_Tick;
+
+
             SearchArduinoAndConnect();
 
 
 
-            ColorDirectionButtons();
+            VisualMovingButtons();
+        }
+
+        [Obsolete("delete")]
+        private void LoopMovingTimer_Tick(object sender, EventArgs e)
+        {
+            return;
+
+            if (!_isConnected) return;
+
+            while (State == MoveState.Moving)
+            {
+                var value = 1;
+                var sign = Direction == Directions.Right ? "-" : "";
+                _serialPort.WriteLine($"moveDeg {sign}{value}");
+            }
         }
 
         private void SearchArduinoAndConnect()
@@ -82,6 +113,7 @@
 
             _isConnected = true;
 
+            _loopMovingTimer.Start();
             _positionTimer.Start();
 
             connectedIndicator.Fill = Brushes.Green;
@@ -90,6 +122,7 @@
         private void DisconnectFromArduino()
         {
             _positionTimer.Stop();
+            _loopMovingTimer.Stop();
             _serialPort.Close();
 
             _isConnected = false;
@@ -129,7 +162,7 @@
             }
         }
 
-        private async void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             try
             {
@@ -172,7 +205,6 @@
             catch { }
         }
 
-
         private void HomeReset_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -184,45 +216,63 @@
                 }
             }
             catch { }
-
         }
-
-
 
         private void OpticalIndicatorDo(bool enabled)
         {
-            clock.Background = enabled ? Brushes.Green : (Brush)Brushes.IndianRed;
+            sliderControl.Background = enabled ? Brushes.Green : (Brush)Brushes.IndianRed;
         }
 
-        private void LeftDirectionButton_Click(object sender, RoutedEventArgs e)
+        private void buttonStartStop_Click(object sender, RoutedEventArgs e)
         {
-
-        }
-
-        private void buttonLeftDir_Click(object sender, RoutedEventArgs e)
-        {
-            Direction = false;
-            ColorDirectionButtons();
-        }
-
-        private void buttonRightDir_Click(object sender, RoutedEventArgs e)
-        {
-            Direction = true;
-            ColorDirectionButtons();
-        }
-
-        private void ColorDirectionButtons()
-        {
-            if (Direction)
+            State = State == MoveState.Stop ? MoveState.Moving : MoveState.Stop;
+            
+            /**/
+            if (State == MoveState.Moving)
             {
-                buttonRightDir.Background = Brushes.Wheat;
-                buttonLeftDir.Background = Brushes.White;
+                // START
+                var value = 1;
+                var sign = Direction == Directions.Right ? "-" : "";
+                _serialPort.WriteLine($"running {sign}{value}");
             }
-            else
+            else if (State == MoveState.Stop)
             {
-                buttonRightDir.Background = Brushes.White;
-                buttonLeftDir.Background = Brushes.Wheat;
+                // STOP
+                _serialPort.WriteLine($"stop");
             }
+
+            VisualMovingButtons();
+        }
+
+        private void ButtonLeftDir_Click(object sender, RoutedEventArgs e)
+        {
+            Direction = Directions.Left;
+            VisualMovingButtons();
+        }
+
+        private void ButtonRightDir_Click(object sender, RoutedEventArgs e)
+        {
+            Direction = Directions.Right;
+            VisualMovingButtons();
+        }
+
+        private void VisualMovingButtons()
+        {
+            // Меняем названия (картинку)
+            switch (State)
+            {   
+                case MoveState.Stop:
+                    buttonStartStop.Content = "СТАРТ";
+                    break;
+                case MoveState.Moving:
+                    buttonStartStop.Content = "СТОП";
+                    break;
+                default:
+                    break;
+            }
+
+            buttonRightDir.Background = Direction == Directions.Right ? Brushes.Wheat : Brushes.White;
+            buttonLeftDir.Background = Direction == Directions.Left ? Brushes.Wheat : Brushes.White;
         }
 
         private void ButtonDegMove_Click(object sender, RoutedEventArgs e)
@@ -235,7 +285,8 @@
                     var value = senderButton.Content.ToString().TrimEnd('°');
 
                     // Отправляем команду "влево" с указанным значением
-                    var sign = Direction ? "-" : "";
+                    var sign = Direction == Directions.Right ? "-" : "";
+                    tbLog.Text += $"{DateTime.Now.Millisecond}: moveDeg {sign}{value}\n";
                     _serialPort.WriteLine($"moveDeg {sign}{value}");
                 }
             }
@@ -250,12 +301,20 @@
                 if (_isConnected && !string.IsNullOrEmpty(MoveValue.ToString()))
                 {
                     // Отправляем команду "влево" с указанным значением
-                    var sign = Direction ? "-" : "";
+                    var sign = Direction == Directions.Right ? "-" : "";
                     // TODO fix textBoxInput
-                    _serialPort.WriteLine($"moveDeg {sign}{textBoxInput.Text.ToString()}");
+                    _serialPort.WriteLine($"moveDeg {sign}{textBoxInput.Text}");
                 }
             }
             catch { }
+        }
+
+        private void Window_Activated(object sender, EventArgs e)
+        {
+            if (!_isConnected)
+            {
+                SearchArduinoAndConnect();
+            }
         }
     }
 }

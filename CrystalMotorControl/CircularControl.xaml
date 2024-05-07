@@ -1,0 +1,56 @@
+﻿<UserControl x:Class="CrystalMotorControl.CircularControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:my="clr-namespace:CrystalMotorControl"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300">
+    <UserControl.Resources>
+        <my:ValueAngleConverter x:Key="valueAngleConverter"/>
+        <my:ValueTextConverter x:Key="valueTextConverter"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <Slider Name="knob">
+            <Slider.Template>
+                <ControlTemplate>
+                    <Viewbox>
+                        <Canvas Width="300" Height="300" Margin="5">
+                            <Ellipse Fill="LightBlue" Width="300" Height="300" Canvas.Left="0" Canvas.Top="0" 
+                Stroke="Black" StrokeThickness="10"
+                MouseLeftButtonUp="Ellipse_MouseLeftButtonUp"
+                MouseMove="Ellipse_MouseMove"/>
+                            <Ellipse Fill="Black" Width="60" Height="60" Canvas.Left="120" Canvas.Top="120"/>
+                            <Canvas>
+                                <Line Stroke="Red" StrokeThickness="5" X1="150" Y1="150" X2="150" Y2="10"
+                MouseLeftButtonUp="Ellipse_MouseLeftButtonUp"/>
+                                <Ellipse Fill="Red" Width="20" Height="20" Canvas.Left="140" Canvas.Top="0" 
+                MouseLeftButtonDown="Ellipse_MouseLeftButtonDown"
+                    MouseLeftButtonUp="Ellipse_MouseLeftButtonUp">
+                                    <Ellipse.ToolTip>
+                                        <ToolTip>
+                                            <Binding RelativeSource="{RelativeSource TemplatedParent}"
+                                Path="Value" Converter="{StaticResource valueTextConverter}"/>
+                                        </ToolTip>
+                                    </Ellipse.ToolTip>
+                                </Ellipse>
+                                <Canvas.RenderTransform>
+                                    <RotateTransform CenterX="150" CenterY="150">
+                                        <RotateTransform.Angle>
+                                            <MultiBinding Converter="{StaticResource valueAngleConverter}">
+                                                <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Value"/>
+                                                <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Minimum"/>
+                                                <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Maximum"/>
+                                            </MultiBinding>
+                                        </RotateTransform.Angle>
+                                    </RotateTransform>
+                                </Canvas.RenderTransform>
+                            </Canvas>
+                        </Canvas>
+                    </Viewbox>
+                </ControlTemplate>
+            </Slider.Template>
+        </Slider>
+    </Grid>
+</UserControl>
