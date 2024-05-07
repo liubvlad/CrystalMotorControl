@@ -57,6 +57,11 @@ namespace CrystalMotorControl
                 knob.Value = (knob.Maximum - knob.Minimum) * angle / (2 * Math.PI);
             }
         }
+
+        public void SetDegreeAngleForCircle(double angleDegree)
+        {
+            knob.Value = (knob.Maximum - knob.Minimum) * (angleDegree / 360.0);
+        }
     }
 
     //The converter used to convert the value to the rotation angle.

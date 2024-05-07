@@ -34,6 +34,7 @@
     public partial class MainWindow : Window
     {
         private SerialPort _serialPort;
+        private readonly CircularControl CircularControl = new CircularControl();
         private bool _isConnected = false;
         private readonly DispatcherTimer _positionTimer;
         private readonly DispatcherTimer _loopMovingTimer;
@@ -49,10 +50,10 @@
             InitializeComponent();
             //DataContext = this;
 
-            sliderControl.Content = new CircularControl();
+            sliderControl.Content = CircularControl;
 
             _positionTimer = new DispatcherTimer();
-            _positionTimer.Interval = TimeSpan.FromMilliseconds(200);
+            _positionTimer.Interval = TimeSpan.FromMilliseconds(50);
             _positionTimer.Tick += PositionTimer_Tick;
 
 
@@ -183,7 +184,15 @@
                     {
                         var value = receivedData.Replace("currentDeg=", string.Empty);
                         Position = value.Trim();
-                        Dispatcher.Invoke(() => tbPos.Text = Position);
+                        try
+                        {
+                            Dispatcher.Invoke(() =>
+                            {
+                                tbPos.Text = Position;
+                                CircularControl.SetDegreeAngleForCircle(Convert.ToDouble(Position.Replace('.', ',')));
+                            });
+                        }
+                        catch { }
                     }
 
                     if (receivedData.Contains("optical"))
