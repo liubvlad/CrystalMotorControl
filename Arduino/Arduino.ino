@@ -10,6 +10,8 @@ static uint32_t prevOpticMillis = 0;
 static uint32_t prevTimerMillis = 0;
 
 bool shouldSetHome = false;
+bool running = false;
+float runningStep = 1;
 
 void setup() {
   Serial.begin(9600);
@@ -58,12 +60,15 @@ void opticalEndCheck() {
 }
 
 
-void timer() {
+void timer_running() {
   uint32_t currentMillis = millis();
 
-  if (currentMillis - prevTimerMillis >= 3000) {
+  if (currentMillis - prevTimerMillis >= 50) {
     prevTimerMillis = currentMillis;
     
+    if (running) {
+      stepper.setTargetDeg(runningStep, RELATIVE);
+    }
     ///Serial.println("timer_3sec");
   }
 }
@@ -73,5 +78,5 @@ void loop() {
   stepper.tick();
 
   opticalEndCheck();
-  timer();
+  timer_running();
 }

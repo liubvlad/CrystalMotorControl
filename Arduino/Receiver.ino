@@ -25,11 +25,49 @@ void serialEvent() {
 
     if (command == "ping") {
       Serial.println("pong");
+      return;
     }
-    else if (command == "break") {
+
+
+    else if (command == "targ") {
+      int targ = stepper.getTarget();
+      SerialPrintMsgValue("targ=", targ);
+      return;
+    }
+    else if (command == "targDeg") {
+      float targDeg = stepper.getTargetDeg();
+      SerialPrintMsgValue("targDeg=", targDeg);
+      return;
+    }
+    
+    else if (command == "current") {
+      int current = stepper.getCurrent();
+      SerialPrintMsgValue("current=", current);
+      return;
+    }
+    else if (command == "currentDeg") {
+      float currentDeg = stepper.getCurrentDeg();
+      SerialPrintMsgValue("currentDeg=", currentDeg);
+      return;
+    }
+
+
+
+
+    // при получении команды для движения - сбрасываем флаги
+    running = false;
+    shouldSetHome = false;
+
+    if (command == "break") {
+      running = false;
+      shouldSetHome = false;
+
       stepper.brake();
     }
     else if (command == "stop") {
+      running = false;
+      shouldSetHome = false;
+
       stepper.stop();
     }
 
@@ -51,6 +89,7 @@ void serialEvent() {
       stepper.setTargetDeg(moveDeg, RELATIVE);
     }
 
+
     else if (command == "home") {
       stepper.setTarget(0);
     }
@@ -58,26 +97,12 @@ void serialEvent() {
       shouldSetHome = true;
       stepper.setTarget(STEPS_ON_TURN, RELATIVE);
     } 
-    
-    
-    else if (command == "targ") {
-      int targ = stepper.getTarget();
-      SerialPrintMsgValue("targ=", targ);
-    }
-    else if (command == "targDeg") {
-      float targDeg = stepper.getTargetDeg();
-      SerialPrintMsgValue("targDeg=", targDeg);
-    }
-    
 
-    else if (command == "current") {
-      int current = stepper.getCurrent();
-      SerialPrintMsgValue("current=", current);
-    }
-    else if (command == "currentDeg") {
-      float currentDeg = stepper.getCurrentDeg();
-      SerialPrintMsgValue("currentDeg=", currentDeg);
+
+    else if (command == "running") {
+      float degs = value.toFloat();
+      runningStep = degs;
+      running = true;
     }
   }
-
 }
