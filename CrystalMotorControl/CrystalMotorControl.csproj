@@ -134,6 +134,11 @@
     <Content Include="libopencv_imgproc-409.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Resource Include="res\left.png" />
+    <Resource Include="res\play.png" />
+    <Resource Include="res\right.png" />
+    <Resource Include="res\stop.png" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

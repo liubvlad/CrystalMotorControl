@@ -43,7 +43,7 @@
     public partial class MainWindow : Window
     {
         private SerialPort _serialPort;
-        private readonly CircularControl CircularControl = new CircularControl();
+        private readonly CircularControl CircularControl;
         private bool _isConnected = false;
         private readonly DispatcherTimer _positionTimer;
         private readonly DispatcherTimer _loopMovingTimer;
@@ -59,6 +59,7 @@
             InitializeComponent();
             //DataContext = this;
 
+            CircularControl = new CircularControl(this);
             sliderControl.Content = CircularControl;
 
             _positionTimer = new DispatcherTimer();
@@ -85,7 +86,23 @@
 
         }
 
+        public void SetPositionFromCircularControl(double value)
+        {
+            // TODO del this
+            Title = value.ToString();
 
+            try
+            {
+                if (_isConnected && !string.IsNullOrEmpty(MoveValue.ToString()))
+                {
+                    // Отправляем команду "влево" с указанным значением
+                    //var sign = Direction == Directions.Right ? "-" : "";
+                    // TODO fix textBoxInput
+                    _serialPort.WriteLine($"moveDegTo {value}");
+                }
+            }
+            catch { }
+        }
 
 
         private VideoCapture _capture = null;
@@ -105,14 +122,14 @@
 
             for (int i = 0; i < webCams.Length; i++)
             {
-                sb.AppendLine(webCams[i].Name);
+                sb.AppendLine($"{i}: {webCams[i].Name}");
             }
 
             MessageBox.Show(sb.ToString());
 
             if (webCams.Length > 0)
             {
-                _capture = new VideoCapture(0);
+                _capture = new VideoCapture(webCams.Length - 1);
                 _capture.ImageGrabbed += _capture_ImageGrabbed;
 
                 _capture.Start();
@@ -284,21 +301,6 @@
                 {
                     string receivedData = _serialPort.ReadExisting().Trim();
 
-                    if (receivedData.StartsWith("currentDeg="))
-                    {
-                        var value = receivedData.Replace("currentDeg=", string.Empty);
-                        Position = value.Trim();
-                        try
-                        {
-                            Dispatcher.Invoke(() =>
-                            {
-                                tbPos.Text = Position;
-                                CircularControl.SetDegreeAngleForCircle(Convert.ToDouble(Position.Replace('.', ',')));
-                            });
-                        }
-                        catch { }
-                    }
-
                     if (receivedData.Contains("optical"))
                     {
                         Dispatcher.Invoke(() => OpticalIndicatorDo(true));
@@ -306,6 +308,28 @@
                     if (receivedData.Contains("deoptical"))
                     {
                         Dispatcher.Invoke(() => OpticalIndicatorDo(false));
+                    }
+
+                    if (receivedData.StartsWith("currentDeg="))
+                    {
+                        var value = receivedData.Replace("currentDeg=", string.Empty);
+                        value = value.Split('\r')[0];
+
+                        Position = value.Trim();
+                        try
+                        {
+                            Dispatcher.Invoke(() =>
+                            {
+                                tbPos.Text = Position;
+                                var angle = Convert.ToDouble(Position.Replace('.', ','));
+
+                                // TODO памагити (отрицательные работаю некорректно)
+                                angle = 360 - Math.Abs(angle % 360);
+
+                                CircularControl.SetDegreeAngleForCircle(angle);
+                            });
+                        }
+                        catch { }
                     }
                 }
             }

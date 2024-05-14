@@ -20,9 +20,19 @@ namespace CrystalMotorControl
     /// </summary>
     public partial class CircularControl : UserControl
     {
+        private MainWindow _owner = null;
+        private Action<double> action = null;
+
         public CircularControl()
         {
             InitializeComponent();
+        }
+
+        public CircularControl(MainWindow owner) : base()
+        {
+            InitializeComponent();
+            _owner = owner;
+            //action = myAction;
         }
 
         private bool _isPressed = false;
@@ -54,6 +64,17 @@ namespace CrystalMotorControl
                 const double RADIUS = 150;
                 Point newPos = e.GetPosition(_templateCanvas);
                 double angle = MyHelper.GetAngleR(newPos, RADIUS);
+
+                var angleDegree = angle * 360 / (2 * Math.PI);
+                Dispatcher.Invoke(() =>
+                {
+                    if (_owner != null)
+                    {
+                        _owner.SetPositionFromCircularControl(angleDegree);
+                    }
+                }
+                );
+
                 knob.Value = (knob.Maximum - knob.Minimum) * angle / (2 * Math.PI);
             }
         }
