@@ -6,6 +6,7 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="900" Width="1600"
         FontSize="36"
+        Loaded="Window_Loaded"
         Activated="Window_Activated"
         FontFamily="Consolas">
     <Grid Margin="10">
@@ -59,15 +60,21 @@
         <Button Grid.Row="2" Grid.Column="2" Content="90°"  Margin="10" Click="ButtonDegMove_Click" />
         <Button Grid.Row="2" Grid.Column="3" Content="360°" Margin="10" Click="ButtonDegMove_Click" />
 
-        
+
         <TextBox x:Name="textBoxInput" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Margin="10"
                  Text="{Binding MoveValue, UpdateSourceTrigger=PropertyChanged}" />
         <Button  Grid.Row="3" Grid.Column="3" Content="GO" Margin="10" Click="GoButton_Click"/>
 
-        
-        <Button x:Name="buttonLeftDir" Grid.Row="4" Grid.Column="1" Content="ЛЕВ" Margin="10" Click="ButtonLeftDir_Click" />
-        <Button x:Name="buttonStartStop" Grid.Row="4" Grid.Column="2" Content="СТАРТ" Margin="10" Click="buttonStartStop_Click"/>
-        <Button x:Name="buttonRightDir" Grid.Row="4" Grid.Column="3" Content="ПРАВ" Margin="10" Click="ButtonRightDir_Click"/>
+
+        <Button x:Name="buttonLeftDir" Grid.Row="4" Grid.Column="1" Margin="10" Click="ButtonLeftDir_Click">
+            <Image Source="res/left.png"/>
+        </Button>
+        <Button x:Name="buttonStartStop" Grid.Row="4" Grid.Column="2" Margin="10" Click="buttonStartStop_Click">
+            <Image Source="res/play.png"/>
+        </Button>
+        <Button x:Name="buttonRightDir" Grid.Row="4" Grid.Column="3" Margin="10" Click="ButtonRightDir_Click">
+            <Image Source="res/right.png"/>
+        </Button>
 
 
         <StackPanel Grid.Row="6"

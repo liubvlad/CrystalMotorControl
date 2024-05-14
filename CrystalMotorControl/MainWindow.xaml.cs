@@ -1,14 +1,20 @@
 ﻿namespace CrystalMotorControl
 {
+    using DirectShowLib;
     using Emgu.CV;
     using System;
     using System.Collections.ObjectModel;
+    using System.IO;
     using System.IO.Ports;
     using System.Linq;
+    using System.Runtime.InteropServices;
+    using System.Text;
     using System.Text.RegularExpressions;
     using System.Windows;
     using System.Windows.Controls;
+    using System.Windows.Interop;
     using System.Windows.Media;
+    using System.Windows.Media.Imaging;
     using System.Windows.Threading;
 
     
@@ -65,20 +71,54 @@
 
             SearchArduinoAndConnect();
             VisualMovingButtons();
+        }
 
+        /*
+        playSequence.Template.FindName("PlayImage", playSequence)
+            .SetValue(Image.SourceProperty,
+                      new BitmapImage(new Uri(@"Pause.png", UriKind.Relative)));
+            */
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
             SimpleCamera();
+
         }
 
 
 
 
-
-
         private VideoCapture _capture = null;
+        private DsDevice[] webCams = null;
+
+        private int selectedCameraId = 0;
+
         private bool _captureInProgress;
         private Mat _frame;
+
         private void SimpleCamera()
         {
+
+            webCams = DsDevice.GetDevicesOfCat(FilterCategory.VideoInputDevice);
+
+            var sb = new StringBuilder();
+
+            for (int i = 0; i < webCams.Length; i++)
+            {
+                sb.AppendLine(webCams[i].Name);
+            }
+
+            MessageBox.Show(sb.ToString());
+
+            if (webCams.Length > 0)
+            {
+                _capture = new VideoCapture(0);
+                _capture.ImageGrabbed += _capture_ImageGrabbed;
+
+                _capture.Start();
+            }
+
+            /*
             CvInvoke.UseOpenCL = false;
             try
             {
@@ -93,15 +133,43 @@
 
 
             _frame = new Mat();
-            _capture.Start();
+            _capture.Start();*/
         }
+
+        private void _capture_ImageGrabbed(object sender, EventArgs e)
+        {
+            try
+            {
+                Mat m = new Mat();
+                _capture.Retrieve(m);
+
+                Dispatcher.Invoke(new Action(() =>
+                    imageBox.Source = ConvertBitmap(m.ToBitmap())
+                ));
+            }
+            catch { }
+        }
+
+        public BitmapImage ConvertBitmap(System.Drawing.Bitmap bitmap)
+        {
+            MemoryStream ms = new MemoryStream();
+            bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);
+            BitmapImage image = new BitmapImage();
+            image.BeginInit();
+            ms.Seek(0, SeekOrigin.Begin);
+            image.StreamSource = ms;
+            image.EndInit();
+
+            return image;
+        }
+
         private void ProcessFrame(object sender, EventArgs arg)
         {
             if (_capture != null && _capture.Ptr != IntPtr.Zero)
             {
                 _capture.Retrieve(_frame, 0);
-                Dispatcher.Invoke(new Action(() => imageBox.Source =
-                BitmapSourceConvert.ToBitmapSource(_frame as IImage)));
+                ///Dispatcher.Invoke(new Action(() => imageBox.Source;
+                ///BitmapSourceConvert.ToBitmapSource(_frame as IImage)));
             }
         }
 
@@ -370,5 +438,6 @@
                 SearchArduinoAndConnect();
             }
         }
+
     }
 }
