@@ -2,6 +2,7 @@
 {
     using DirectShowLib;
     using Emgu.CV;
+    using Emgu.CV.Structure;
     using System;
     using System.Collections.ObjectModel;
     using System.IO;
@@ -10,12 +11,14 @@
     using System.Runtime.InteropServices;
     using System.Text;
     using System.Text.RegularExpressions;
+    using System.Threading.Tasks;
     using System.Windows;
     using System.Windows.Controls;
     using System.Windows.Interop;
     using System.Windows.Media;
     using System.Windows.Media.Imaging;
     using System.Windows.Threading;
+    using static Emgu.CV.ML.KNearest;
 
     
     public enum Directions
@@ -30,14 +33,22 @@
         Moving = 1,
     }
 
-    // не менять фон когда дома или нет, или менять зеленый -- серый
-    // если уже дома - не искать дом
-    // каждый раз когда прошел, запоминать дом
+    // !!! Убраться в коде :)
 
+    // добавить стиль для нажатых кнопок
+    // добавить изменение цвета при наведении на TOP кнопки
+    // Понять какой цвет менять если мы дома
+    // размытие фона за камерой (убрать синий)
+
+
+    // алгоритм поиска и обновления камеры
+
+
+    // каждый раз когда прошел, запоминать дом
+    // если уже дома - не искать дом
     // оптимизировать алгоритм запоминания дома (в разные стороны ближе от середины) (подумать)
 
     // добавить картинки
-    // вывести программные ручки для слайдера (задавать угол из вне)
 
 
     public partial class MainWindow : Window
@@ -74,20 +85,30 @@
             VisualMovingButtons();
         }
 
-        /*
-        playSequence.Template.FindName("PlayImage", playSequence)
-            .SetValue(Image.SourceProperty,
-                      new BitmapImage(new Uri(@"Pause.png", UriKind.Relative)));
-            */
-
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            SimpleCamera();
+#if DEBUG
+            // TODO DEBUG
+            for (double val = 60; val > -60; val -= 1.1)
+            {
+                var angle = 360 - (360 + val) % 360;
+                CircularControl.SetDegreeAngleForCircle(angle);
 
+                tbPos.Text = val.ToString();
+
+                await Task.Delay(1);
+            }
+#endif
+
+
+            SimpleCamera();
         }
 
         public void SetPositionFromCircularControl(double value)
         {
+            // Fix value by redirection
+            value = 360 - value;
+
             // TODO del this
             Title = value.ToString();
 
@@ -161,7 +182,7 @@
                 _capture.Retrieve(m);
 
                 Dispatcher.Invoke(new Action(() =>
-                    imageBox.Source = ConvertBitmap(m.ToBitmap())
+                    cameraBox.Source = ConvertBitmap(m.ToBitmap())
                 ));
             }
             catch { }
@@ -408,7 +429,11 @@
             switch (State)
             {   
                 case MoveState.Stop:
-                    buttonStartStop.Content = "СТАРТ";
+                    /*buttonStartStop.Template.FindName("Image", playSequence)
+            .SetValue(Image.SourceProperty,
+                      new BitmapImage(new Uri(@"Pause.png", UriKind.Relative)));*/
+                    //new Uri(@"pack://application:,,,/Images/1.png")
+                    buttonStartStop.Content = "ПУСК";
                     break;
                 case MoveState.Moving:
                     buttonStartStop.Content = "СТОП";

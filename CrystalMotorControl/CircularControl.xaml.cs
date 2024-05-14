@@ -21,7 +21,18 @@ namespace CrystalMotorControl
     public partial class CircularControl : UserControl
     {
         private MainWindow _owner = null;
-        private Action<double> action = null;
+        private bool _isPressed = false;
+        private Canvas _templateCanvas = null;
+
+        public Brush BackgroundFill
+        {
+            get { return (Brush)GetValue(BackgroundFillProperty); }
+            set { SetValue(BackgroundFillProperty, value); }
+        }
+
+        public static readonly DependencyProperty BackgroundFillProperty =
+            DependencyProperty.Register("BackgroundFill", typeof(Brush), typeof(Slider), new PropertyMetadata(Brushes.LightBlue));
+
 
         public CircularControl()
         {
@@ -32,11 +43,11 @@ namespace CrystalMotorControl
         {
             InitializeComponent();
             _owner = owner;
-            //action = myAction;
+            // // action = myAction;
+
+            BackgroundFill = Brushes.AliceBlue;
         }
 
-        private bool _isPressed = false;
-        private Canvas _templateCanvas = null;
 
         private void Ellipse_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -45,6 +56,12 @@ namespace CrystalMotorControl
         }
 
         private void Ellipse_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            //Disable moving mouse to change the value.
+            _isPressed = false;
+        }
+
+        private void Canvas_MouseLeave(object sender, MouseEventArgs e)
         {
             //Disable moving mouse to change the value.
             _isPressed = false;
@@ -83,6 +100,7 @@ namespace CrystalMotorControl
         {
             knob.Value = (knob.Maximum - knob.Minimum) * (angleDegree / 360.0);
         }
+
     }
 
     //The converter used to convert the value to the rotation angle.

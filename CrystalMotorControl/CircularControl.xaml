@@ -16,16 +16,18 @@
             <Slider.Template>
                 <ControlTemplate>
                     <Viewbox>
-                        <Canvas Width="300" Height="300" Margin="5">
-                            <Ellipse Fill="LightBlue" Width="300" Height="300" Canvas.Left="0" Canvas.Top="0" 
-                Stroke="Black" StrokeThickness="10"
+                        <Canvas Width="300" Height="300" Margin="5"
+                                MouseLeave="Canvas_MouseLeave">
+                            <Ellipse Fill="#6886aa" Width="300" Height="300" Canvas.Left="0" Canvas.Top="0" 
+                Stroke="#333" StrokeThickness="5"
                 MouseLeftButtonUp="Ellipse_MouseLeftButtonUp"
-                MouseMove="Ellipse_MouseMove"/>
-                            <Ellipse Fill="Black" Width="60" Height="60" Canvas.Left="120" Canvas.Top="120"/>
+                MouseMove="Ellipse_MouseMove"
+                                     />
+                            <Ellipse Fill="#333" Width="60" Height="60" Canvas.Left="120" Canvas.Top="120"/>
                             <Canvas>
-                                <Line Stroke="Red" StrokeThickness="5" X1="150" Y1="150" X2="150" Y2="10"
+                                <Line Stroke="#FAE5C1" StrokeThickness="5" X1="150" Y1="150" X2="150" Y2="10"
                 MouseLeftButtonUp="Ellipse_MouseLeftButtonUp"/>
-                                <Ellipse Fill="Red" Width="20" Height="20" Canvas.Left="140" Canvas.Top="0" 
+                                <Ellipse Fill="#FAE5C1" Width="20" Height="20" Canvas.Left="140" Canvas.Top="0" 
                 MouseLeftButtonDown="Ellipse_MouseLeftButtonDown"
                     MouseLeftButtonUp="Ellipse_MouseLeftButtonUp">
                                     <Ellipse.ToolTip>
