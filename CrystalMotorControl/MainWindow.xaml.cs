@@ -1,9 +1,11 @@
 ﻿namespace CrystalMotorControl
 {
+    using Emgu.CV;
     using System;
     using System.Collections.ObjectModel;
     using System.IO.Ports;
     using System.Linq;
+    using System.Text.RegularExpressions;
     using System.Windows;
     using System.Windows.Controls;
     using System.Windows.Media;
@@ -31,6 +33,7 @@
     // добавить картинки
     // вывести программные ручки для слайдера (задавать угол из вне)
 
+
     public partial class MainWindow : Window
     {
         private SerialPort _serialPort;
@@ -56,18 +59,52 @@
             _positionTimer.Interval = TimeSpan.FromMilliseconds(50);
             _positionTimer.Tick += PositionTimer_Tick;
 
-
             _loopMovingTimer = new DispatcherTimer();
             _loopMovingTimer.Interval = TimeSpan.FromMilliseconds(5000);
             _loopMovingTimer.Tick += LoopMovingTimer_Tick;
 
-
             SearchArduinoAndConnect();
-
-
-
             VisualMovingButtons();
+
+            SimpleCamera();
         }
+
+
+
+
+
+
+        private VideoCapture _capture = null;
+        private bool _captureInProgress;
+        private Mat _frame;
+        private void SimpleCamera()
+        {
+            CvInvoke.UseOpenCL = false;
+            try
+            {
+                _capture = new VideoCapture();
+                // Подписываемся на событие
+                _capture.ImageGrabbed += ProcessFrame;
+            }
+            catch (NullReferenceException excpt)
+            {
+                MessageBox.Show(excpt.Message);
+            }
+
+
+            _frame = new Mat();
+            _capture.Start();
+        }
+        private void ProcessFrame(object sender, EventArgs arg)
+        {
+            if (_capture != null && _capture.Ptr != IntPtr.Zero)
+            {
+                _capture.Retrieve(_frame, 0);
+                Dispatcher.Invoke(new Action(() => imageBox.Source =
+                BitmapSourceConvert.ToBitmapSource(_frame as IImage)));
+            }
+        }
+
 
         [Obsolete("delete")]
         private void LoopMovingTimer_Tick(object sender, EventArgs e)
@@ -108,7 +145,6 @@
                     MessageBox.Show($"TEMP {ex.Message}");
                 }
             }
-
 
 
 
@@ -304,7 +340,7 @@
 
                     // Отправляем команду "влево" с указанным значением
                     var sign = Direction == Directions.Right ? "-" : "";
-                    tbLog.Text += $"{DateTime.Now.Millisecond}: moveDeg {sign}{value}\n";
+                    ///tbLog.Text += $"{DateTime.Now.Millisecond}: moveDeg {sign}{value}\n";
                     _serialPort.WriteLine($"moveDeg {sign}{value}");
                 }
             }

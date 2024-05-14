@@ -83,8 +83,10 @@
                        MinWidth="150"/>
         </StackPanel>
 
-        <TextBox x:Name="tbLog" Grid.Row="0" Grid.Column="4"
-                 Grid.RowSpan="7"
-                 />
+        <Image x:Name="imageBox" 
+               Grid.Row="0" 
+               Grid.Column="4"
+               Grid.RowSpan="7"
+               />
     </Grid>
 </Window>
