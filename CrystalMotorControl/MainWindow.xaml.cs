@@ -11,6 +11,7 @@
     using System.Runtime.InteropServices;
     using System.Text;
     using System.Text.RegularExpressions;
+    using System.Threading;
     using System.Threading.Tasks;
     using System.Windows;
     using System.Windows.Controls;
@@ -53,12 +54,15 @@
 
     public partial class MainWindow : Window
     {
-        private SerialPort _serialPort;
         private readonly CircularControl CircularControl;
-        private bool _isConnected = false;
+
         private readonly DispatcherTimer _positionTimer;
         private readonly DispatcherTimer _loopMovingTimer;
 
+        private SerialPort _serialPort;
+        private bool _isConnected = false;
+
+        private readonly Style _defaultButtonStyle;
         public string Position { get; set; }
         public double MoveValue { get; set; }
 
@@ -68,7 +72,7 @@
         public MainWindow()
         {
             InitializeComponent();
-            //DataContext = this;
+            _defaultButtonStyle = buttonRightDir.Style;
 
             CircularControl = new CircularControl(this);
             sliderControl.Content = CircularControl;
@@ -87,6 +91,7 @@
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            /*
 #if DEBUG
             // TODO DEBUG
             for (double val = 60; val > -60; val -= 1.1)
@@ -99,18 +104,23 @@
                 await Task.Delay(1);
             }
 #endif
-
-
-            SimpleCamera();
+*/
+            new Thread(() =>
+            {
+                Thread.CurrentThread.IsBackground = true;
+                /* run your code here */
+                SimpleCamera();
+            }).Start();
+            
         }
 
-        public void SetPositionFromCircularControl(double value)
+        public void CallbackHandlerFromCircular(double value)
         {
             // Fix value by redirection
             value = 360 - value;
 
             // TODO del this
-            Title = value.ToString();
+            //Title = value.ToString();
 
             try
             {
@@ -191,7 +201,7 @@
         public BitmapImage ConvertBitmap(System.Drawing.Bitmap bitmap)
         {
             MemoryStream ms = new MemoryStream();
-            bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);
+            bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
             BitmapImage image = new BitmapImage();
             image.BeginInit();
             ms.Seek(0, SeekOrigin.Begin);
@@ -442,8 +452,16 @@
                     break;
             }
 
-            buttonRightDir.Background = Direction == Directions.Right ? Brushes.Wheat : Brushes.White;
-            buttonLeftDir.Background = Direction == Directions.Left ? Brushes.Wheat : Brushes.White;
+            if (Direction == Directions.Right)
+            {
+                buttonRightDir.Style = this.FindResource("ActiveButtonStyle") as Style;
+                buttonLeftDir.Style = _defaultButtonStyle;
+            }
+            else if (Direction == Directions.Left)
+            {
+                buttonLeftDir.Style = this.FindResource("ActiveButtonStyle") as Style;
+                buttonRightDir.Style = _defaultButtonStyle;
+            }
         }
 
         private void ButtonDegMove_Click(object sender, RoutedEventArgs e)

@@ -1,22 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-
-namespace CrystalMotorControl
+﻿namespace CrystalMotorControl
 {
+    using System;
+    using System.Windows;
+    using System.Windows.Controls;
+    using System.Windows.Data;
+    using System.Windows.Input;
+    using System.Windows.Media;
+    using System.Windows.Shapes;
+
     /// <summary>
-    /// Логика взаимодействия для CircularControl.xaml
+    /// Circular Slider User Control
     /// </summary>
     public partial class CircularControl : UserControl
     {
@@ -24,30 +17,28 @@ namespace CrystalMotorControl
         private bool _isPressed = false;
         private Canvas _templateCanvas = null;
 
-        public Brush BackgroundFill
-        {
-            get { return (Brush)GetValue(BackgroundFillProperty); }
-            set { SetValue(BackgroundFillProperty, value); }
-        }
-
-        public static readonly DependencyProperty BackgroundFillProperty =
-            DependencyProperty.Register("BackgroundFill", typeof(Brush), typeof(Slider), new PropertyMetadata(Brushes.LightBlue));
-
-
         public CircularControl()
         {
             InitializeComponent();
         }
 
-        public CircularControl(MainWindow owner) : base()
+        public CircularControl(MainWindow owner)
+            : this()
         {
-            InitializeComponent();
             _owner = owner;
-            // // action = myAction;
-
-            BackgroundFill = Brushes.AliceBlue;
         }
 
+        // Callback on editting arrow position
+        private void CallBackToOwnerWindow(double angleDegree)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (_owner != null)
+                {
+                    _owner.CallbackHandlerFromCircular(angleDegree);
+                }
+            });
+        }
 
         private void Ellipse_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -80,19 +71,11 @@ namespace CrystalMotorControl
                 //Canculate the current rotation angle and set the value.
                 const double RADIUS = 150;
                 Point newPos = e.GetPosition(_templateCanvas);
-                double angle = MyHelper.GetAngleR(newPos, RADIUS);
-
-                var angleDegree = angle * 360 / (2 * Math.PI);
-                Dispatcher.Invoke(() =>
-                {
-                    if (_owner != null)
-                    {
-                        _owner.SetPositionFromCircularControl(angleDegree);
-                    }
-                }
-                );
-
-                knob.Value = (knob.Maximum - knob.Minimum) * angle / (2 * Math.PI);
+                double angleR = MyHelper.GetAngleR(newPos, RADIUS);
+                knob.Value = (knob.Maximum - knob.Minimum) * angleR / (2 * Math.PI);
+                
+                // CallBack to owner
+                CallBackToOwnerWindow(MyHelper.GetAngle(angleR));
             }
         }
 
@@ -100,7 +83,6 @@ namespace CrystalMotorControl
         {
             knob.Value = (knob.Maximum - knob.Minimum) * (angleDegree / 360.0);
         }
-
     }
 
     //The converter used to convert the value to the rotation angle.
@@ -130,7 +112,6 @@ namespace CrystalMotorControl
     //Convert the value to text.
     public class ValueTextConverter : IValueConverter
     {
-
         #region IValueConverter Members
 
         public object Convert(object value, Type targetType, object parameter,
@@ -167,7 +148,7 @@ namespace CrystalMotorControl
             return null;
         }
 
-        //Get the rotation angle from the value
+        //Get the degree angle from the value
         public static double GetAngle(double value, double maximum, double minimum)
         {
             double current = (value / (maximum - minimum)) * 360;
@@ -175,6 +156,13 @@ namespace CrystalMotorControl
                 current = 359.999;
 
             return current;
+        }
+
+        //Get the degree angle from the rotation angle
+        public static double GetAngle(double rotationAngle)
+        {
+            var angleDegree = rotationAngle * 360 / (2 * Math.PI);
+            return angleDegree;
         }
 
         //Get the rotation angle from the position of the mouse
