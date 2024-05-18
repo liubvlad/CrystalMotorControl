@@ -8,6 +8,7 @@
         Height="1080" Width="1920"
         FontSize="42"
         Loaded="Window_Loaded"
+        Closing="Window_Closing"
         Activated="Window_Activated"
         WindowState="Maximized"
         FontFamily="Consolas"
@@ -159,7 +160,7 @@
                 Margin="15 0 25 25"
                 CornerRadius="30"
                 >
-            <Image x:Name="cameraBox"/>
+            <UserControl x:Name="cameraBoxControl"/>
         </Border>
 
 

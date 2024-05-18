@@ -20,25 +20,14 @@
     using System.Windows.Media.Imaging;
     using System.Windows.Threading;
     using static Emgu.CV.ML.KNearest;
-
     
-    public enum Directions
-    {
-        Left = 1,
-        Right = 2,
-    }
 
-    public enum MoveState
-    {
-        Stop = 0,
-        Moving = 1,
-    }
 
     // !!! Убраться в коде :)
 
-    // добавить стиль для нажатых кнопок
-    // добавить изменение цвета при наведении на TOP кнопки
-    // Понять какой цвет менять если мы дома
+    // добавить стиль для нажатых кнопок+
+    // добавить изменение цвета при наведении на TOP кнопки+
+    // Понять какой цвет менять если мы дома+
     // размытие фона за камерой (убрать синий)
 
 
@@ -54,10 +43,10 @@
 
     public partial class MainWindow : Window
     {
+        private readonly CameraUserControl CameraUserControl;
         private readonly CircularControl CircularControl;
 
         private readonly DispatcherTimer _positionTimer;
-        private readonly DispatcherTimer _loopMovingTimer;
 
         private SerialPort _serialPort;
         private bool _isConnected = false;
@@ -77,50 +66,42 @@
             CircularControl = new CircularControl(this);
             sliderControl.Content = CircularControl;
 
+            CameraUserControl = new CameraUserControl();
+            cameraBoxControl.Content = CameraUserControl;
+
             _positionTimer = new DispatcherTimer();
             _positionTimer.Interval = TimeSpan.FromMilliseconds(50);
             _positionTimer.Tick += PositionTimer_Tick;
-
-            _loopMovingTimer = new DispatcherTimer();
-            _loopMovingTimer.Interval = TimeSpan.FromMilliseconds(5000);
-            _loopMovingTimer.Tick += LoopMovingTimer_Tick;
 
             SearchArduinoAndConnect();
             VisualMovingButtons();
         }
 
-        private async void Window_Loaded(object sender, RoutedEventArgs e)
+        private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            /*
-#if DEBUG
-            // TODO DEBUG
-            for (double val = 60; val > -60; val -= 1.1)
+            CameraUserControl.StartCameraThread();
+        }
+
+        private void Window_Activated(object sender, EventArgs e)
+        {
+            if (!_isConnected)
             {
-                var angle = 360 - (360 + val) % 360;
-                CircularControl.SetDegreeAngleForCircle(angle);
-
-                tbPos.Text = val.ToString();
-
-                await Task.Delay(1);
+                SearchArduinoAndConnect();
             }
-#endif
-*/
-            new Thread(() =>
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (_isConnected)
             {
-                Thread.CurrentThread.IsBackground = true;
-                /* run your code here */
-                SimpleCamera();
-            }).Start();
-            
+                DisconnectFromArduino();
+            }
         }
 
         public void CallbackHandlerFromCircular(double value)
         {
-            // Fix value by redirection
+            // Fix value by reverse direction
             value = 360 - value;
-
-            // TODO del this
-            //Title = value.ToString();
 
             try
             {
@@ -135,108 +116,6 @@
             catch { }
         }
 
-
-        private VideoCapture _capture = null;
-        private DsDevice[] webCams = null;
-
-        private int selectedCameraId = 0;
-
-        private bool _captureInProgress;
-        private Mat _frame;
-
-        private void SimpleCamera()
-        {
-
-            webCams = DsDevice.GetDevicesOfCat(FilterCategory.VideoInputDevice);
-
-            var sb = new StringBuilder();
-
-            for (int i = 0; i < webCams.Length; i++)
-            {
-                sb.AppendLine($"{i}: {webCams[i].Name}");
-            }
-
-            MessageBox.Show(sb.ToString());
-
-            if (webCams.Length > 0)
-            {
-                _capture = new VideoCapture(webCams.Length - 1);
-                _capture.ImageGrabbed += _capture_ImageGrabbed;
-
-                _capture.Start();
-            }
-
-            /*
-            CvInvoke.UseOpenCL = false;
-            try
-            {
-                _capture = new VideoCapture();
-                // Подписываемся на событие
-                _capture.ImageGrabbed += ProcessFrame;
-            }
-            catch (NullReferenceException excpt)
-            {
-                MessageBox.Show(excpt.Message);
-            }
-
-
-            _frame = new Mat();
-            _capture.Start();*/
-        }
-
-        private void _capture_ImageGrabbed(object sender, EventArgs e)
-        {
-            try
-            {
-                Mat m = new Mat();
-                _capture.Retrieve(m);
-
-                Dispatcher.Invoke(new Action(() =>
-                    cameraBox.Source = ConvertBitmap(m.ToBitmap())
-                ));
-            }
-            catch { }
-        }
-
-        public BitmapImage ConvertBitmap(System.Drawing.Bitmap bitmap)
-        {
-            MemoryStream ms = new MemoryStream();
-            bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
-            BitmapImage image = new BitmapImage();
-            image.BeginInit();
-            ms.Seek(0, SeekOrigin.Begin);
-            image.StreamSource = ms;
-            image.EndInit();
-
-            return image;
-        }
-
-        private void ProcessFrame(object sender, EventArgs arg)
-        {
-            if (_capture != null && _capture.Ptr != IntPtr.Zero)
-            {
-                _capture.Retrieve(_frame, 0);
-                ///Dispatcher.Invoke(new Action(() => imageBox.Source;
-                ///BitmapSourceConvert.ToBitmapSource(_frame as IImage)));
-            }
-        }
-
-
-        [Obsolete("delete")]
-        private void LoopMovingTimer_Tick(object sender, EventArgs e)
-        {
-            return;
-
-            if (!_isConnected) return;
-
-            while (State == MoveState.Moving)
-            {
-                var value = 1;
-                var sign = Direction == Directions.Right ? "-" : "";
-                _serialPort.WriteLine($"moveDeg {sign}{value}");
-            }
-        }
-
         private void SearchArduinoAndConnect()
         {
             var ports = SerialPort.GetPortNames();
@@ -246,26 +125,38 @@
                 MessageBox.Show("Нет устройств для подключения!");
             }
 
-
             foreach (var port in ports)
             {
                 try
                 {
                     // TODO автопоиск
-                    ConnectToArduino(port);
 
-                    Title = "Подключено к " + port;
+                    var serialPort = new SerialPort(port, 9600);
+                    serialPort.Open();
+                    serialPort.WriteTimeout = 100;
+                    serialPort.ReadTimeout = 100;
+
+                    serialPort.WriteLine("ATZ");
+
+                    Task.Delay(100);
+
+                    var line = serialPort.ReadLine();
+                    serialPort.Close();
+
+                    if (line.StartsWith("Crystal Motor"))
+                    {
+                        ConnectToArduino(port);
+                        Title = "Подключено к " + port;
+
+                        return;
+                    }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"TEMP {ex.Message}");
+                    //MessageBox.Show($"TEMP {ex.Message}");
                 }
             }
-
-
-
         }
-
 
         private void ConnectToArduino(string port)
         {
@@ -275,7 +166,6 @@
 
             _isConnected = true;
 
-            _loopMovingTimer.Start();
             _positionTimer.Start();
 
             connectedIndicator.Fill = Brushes.Green;
@@ -283,44 +173,17 @@
 
         private void DisconnectFromArduino()
         {
-            _positionTimer.Stop();
-            _loopMovingTimer.Stop();
-            _serialPort.Close();
-
-            _isConnected = false;
-
-            connectedIndicator.Fill = Brushes.Red;
-        }
-
-        [Obsolete]
-        private void ConnectButton_Click(object sender, RoutedEventArgs e)
-        {
-            var SelectedPort = "stub";
-
-            if (!_isConnected)
+            try
             {
-                if (string.IsNullOrEmpty(SelectedPort))
-                {
-                    MessageBox.Show("Выберите COM порт", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
+                _positionTimer.Stop();
+                _serialPort.Close();
 
-                try
-                {
-                    ConnectToArduino(SelectedPort);
-                    //MessageBox.Show("Подключено к " + SelectedPort, "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Ошибка при подключении: " + ex.Message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                _isConnected = false;
             }
-            else
+            catch { }
+            finally
             {
-                DisconnectFromArduino();
-                //MessageBox.Show("Отключено от " + SelectedPort, "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-                Title = "Отключено от " + SelectedPort;
-
+                connectedIndicator.Fill = Brushes.Red;
             }
         }
 
@@ -334,11 +197,11 @@
 
                     if (receivedData.Contains("optical"))
                     {
-                        Dispatcher.Invoke(() => OpticalIndicatorDo(true));
+                        Dispatcher.Invoke(() => OpticalIndicatorHandler(true));
                     }
                     if (receivedData.Contains("deoptical"))
                     {
-                        Dispatcher.Invoke(() => OpticalIndicatorDo(false));
+                        Dispatcher.Invoke(() => OpticalIndicatorHandler(false));
                     }
 
                     if (receivedData.StartsWith("currentDeg="))
@@ -395,16 +258,15 @@
             catch { }
         }
 
-        private void OpticalIndicatorDo(bool enabled)
+        private void OpticalIndicatorHandler(bool enabled)
         {
-            sliderControl.Background = enabled ? Brushes.Green : (Brush)Brushes.IndianRed;
+            sliderControl.Background = enabled ? Brushes.Green : (Brush)Brushes.White;
         }
 
         private void buttonStartStop_Click(object sender, RoutedEventArgs e)
         {
             State = State == MoveState.Stop ? MoveState.Moving : MoveState.Stop;
             
-            /**/
             if (State == MoveState.Moving)
             {
                 // START
@@ -436,13 +298,15 @@
         private void VisualMovingButtons()
         {
             // Меняем названия (картинку)
+            /*
+            buttonStartStop.Template.FindName("Image", playSequence)
+                .SetValue(Image.SourceProperty,
+                new BitmapImage(new Uri(@"Pause.png", UriKind.Relative)));
+            new Uri(@"pack://application:,,,/Images/1.png")
+            */
             switch (State)
             {   
                 case MoveState.Stop:
-                    /*buttonStartStop.Template.FindName("Image", playSequence)
-            .SetValue(Image.SourceProperty,
-                      new BitmapImage(new Uri(@"Pause.png", UriKind.Relative)));*/
-                    //new Uri(@"pack://application:,,,/Images/1.png")
                     buttonStartStop.Content = "ПУСК";
                     break;
                 case MoveState.Moving:
@@ -475,7 +339,6 @@
 
                     // Отправляем команду "влево" с указанным значением
                     var sign = Direction == Directions.Right ? "-" : "";
-                    ///tbLog.Text += $"{DateTime.Now.Millisecond}: moveDeg {sign}{value}\n";
                     _serialPort.WriteLine($"moveDeg {sign}{value}");
                 }
             }
@@ -497,14 +360,5 @@
             }
             catch { }
         }
-
-        private void Window_Activated(object sender, EventArgs e)
-        {
-            if (!_isConnected)
-            {
-                SearchArduinoAndConnect();
-            }
-        }
-
     }
 }

@@ -1,48 +1,110 @@
 ﻿namespace CrystalMotorControl
 {
     using System;
-    using System.Collections.Generic;
     using System.Drawing;
-    using System.Linq;
-    using System.Text;
-    using System.Text.RegularExpressions;
-    using System.Threading.Tasks;
+    using System.IO;
+    using System.Threading;
     using System.Windows;
     using System.Windows.Controls;
-    using System.Windows.Data;
-    using System.Windows.Documents;
-    using System.Windows.Input;
-    using System.Windows.Media;
     using System.Windows.Media.Imaging;
-    using System.Windows.Navigation;
-    using System.Windows.Shapes;
+    using DirectShowLib;
     using Emgu.CV;
-    using Emgu.CV.Structure;
 
     public partial class CameraUserControl : UserControl
     {
-        #region Camera Capture Variables
-        private Capture _capture = null; //Camera
-        private bool _captureInProgress = false; //Variable to track camera state
-        int CameraDevice = 0; //Variable to track camera device selected
-        ///Video_Device[] WebCams; //List containing all the camera available
-        #endregion
-
+        private VideoCapture _capture = null;
+        private DsDevice[] webCams = null;
+        private int selectedCameraId = 0;
 
         public CameraUserControl()
         {
             InitializeComponent();
 
-            String win1 = "Test Window (Press any key to close)"; //The name of the window
-            CvInvoke.NamedWindow(win1); //Create the window using the specific name
-            using (Mat frame = new Mat())
-            using (VideoCapture capture = new VideoCapture())
-                while (CvInvoke.WaitKey(1) == -1)
-                {
-                    capture.Read(frame);
-                    CvInvoke.Imshow(win1, frame);
-                }
+            webCams = DsDevice.GetDevicesOfCat(FilterCategory.VideoInputDevice);
+            selectedCameraId = webCams.Length - 1;
         }
 
+        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            
+        }
+
+        public void StartCameraThread()
+        {
+            new Thread(() =>
+            {
+                Thread.CurrentThread.IsBackground = true;
+                InitCameraCapture();
+            }).Start();
+        }
+
+        private void InitCameraCapture()
+        {
+            try
+            {
+                if (webCams.Length > 0)
+                {
+                    _capture?.Stop();
+
+                    _capture = new VideoCapture(selectedCameraId);
+                    _capture.ImageGrabbed += _capture_ImageGrabbed;
+
+                    _capture.Start();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Проблемы подключения к камере!{Environment.NewLine}{ex.Message}", "Ошибка");
+            }
+        }
+
+        private void _capture_ImageGrabbed(object sender, EventArgs e)
+        {
+            try
+            {
+                Mat m = new Mat();
+                _capture.Retrieve(m);
+
+                Dispatcher.Invoke(new Action(() =>
+                    cameraBox.Source = ConvertBitmap(m.ToBitmap())
+                ));
+            }
+            catch { }
+        }
+
+        private void cameraBox_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            try
+            {
+                webCams = DsDevice.GetDevicesOfCat(FilterCategory.VideoInputDevice);
+                if (webCams.Length > 0)
+                {
+                    selectedCameraId--;
+                    if (selectedCameraId < 0)
+                    {
+                        selectedCameraId = webCams.Length - 1;
+                    }
+
+                    InitCameraCapture();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Проблемы подключения к камере!{Environment.NewLine}{ex.Message}", "Ошибка");
+            }
+        }
+
+        private BitmapImage ConvertBitmap(Bitmap bitmap)
+        {
+            MemoryStream ms = new MemoryStream();
+            bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
+            BitmapImage image = new BitmapImage();
+            image.BeginInit();
+            ms.Seek(0, SeekOrigin.Begin);
+            image.StreamSource = ms;
+            image.EndInit();
+
+            return image;
+        }
     }
 }

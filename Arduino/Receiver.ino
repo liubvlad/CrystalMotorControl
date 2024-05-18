@@ -27,6 +27,10 @@ void serialEvent() {
       Serial.println("pong");
       return;
     }
+    if (command == "ATZ") {
+      Serial.println("Crystal Motor");
+      return;
+    }
 
 
     else if (command == "targ") {
