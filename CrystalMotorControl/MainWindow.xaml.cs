@@ -93,7 +93,7 @@
         {
             if (!_isConnected)
             {
-                SearchArduinoAndConnect();
+                SearchArduinoAndConnect(showDialogMessages: false);
             }
         }
 
@@ -105,31 +105,30 @@
             }
         }
 
-        public void CallbackHandlerFromCircular(double value)
+        public void CallbackHandlerFromCircular(double angleAbsolute)
         {
             // Fix value by reverse direction
-            value = 360 - value;
+            var value = 360 - angleAbsolute;
+            var currentAngle = Convert.ToDouble(Position.Replace('.', ','));
+            value = value - currentAngle;
 
             try
             {
                 if (_isConnected && !string.IsNullOrEmpty(MoveValue.ToString()))
                 {
-                    // Отправляем команду "влево" с указанным значением
-                    //var sign = Direction == Directions.Right ? "-" : "";
-                    // TODO fix textBoxInput
-                    _serialPort.WriteLine($"moveDegTo {value}");
+                    _serialPort.WriteLine($"moveDeg {value}");
                 }
             }
             catch { }
         }
 
-        private void SearchArduinoAndConnect()
+        private void SearchArduinoAndConnect(bool showDialogMessages = true)
         {
             var ports = SerialPort.GetPortNames();
 
             if (ports.Length < 0)
             {
-                MessageBox.Show("Нет устройств для подключения!");
+                if (showDialogMessages) MessageBox.Show("Нет устройств для подключения!");
             }
 
             foreach (var port in ports)
@@ -140,8 +139,8 @@
 
                     var serialPort = new SerialPort(port, 9600);
                     serialPort.Open();
-                    serialPort.WriteTimeout = 100;
-                    serialPort.ReadTimeout = 100;
+                    serialPort.WriteTimeout = 200;
+                    serialPort.ReadTimeout = 200;
 
                     serialPort.WriteLine("ATZ");
 
@@ -158,11 +157,19 @@
                         return;
                     }
                 }
+                catch (UnauthorizedAccessException ex)
+                {
+                    if (showDialogMessages) MessageBox.Show($"{ex.Message}");
+                }
+
                 catch (Exception ex)
                 {
                     //MessageBox.Show($"TEMP {ex.Message}");
                 }
             }
+
+            Title = "Устройство не найдено";
+            if (showDialogMessages) MessageBox.Show($"Устройство не найдено");
         }
 
         private void ConnectToArduino(string port)
@@ -225,7 +232,14 @@
                                 var angle = Convert.ToDouble(Position.Replace('.', ','));
 
                                 // TODO памагити (отрицательные работаю некорректно)
-                                angle = 360 - Math.Abs(angle % 360);
+                                if (angle >= 0)
+                                {
+                                    angle = 360 - Math.Abs(angle % 360);
+                                }
+                                else
+                                {
+                                    angle = Math.Abs(angle % 360);
+                                }
 
                                 CircularControl.SetDegreeAngleForCircle(angle);
                             });
