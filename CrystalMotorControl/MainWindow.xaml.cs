@@ -1,52 +1,18 @@
 ﻿namespace CrystalMotorControl
 {
-    using DirectShowLib;
-    using Emgu.CV;
-    using Emgu.CV.Structure;
     using System;
-    using System.Collections.ObjectModel;
-    using System.IO;
     using System.IO.Ports;
-    using System.Linq;
-    using System.Runtime.InteropServices;
-    using System.Text;
-    using System.Text.RegularExpressions;
-    using System.Threading;
     using System.Threading.Tasks;
     using System.Windows;
     using System.Windows.Controls;
-    using System.Windows.Interop;
     using System.Windows.Media;
-    using System.Windows.Media.Imaging;
     using System.Windows.Threading;
-    using static Emgu.CV.ML.KNearest;
-    
 
-
-
-
-
-    // Поправить направление вращения
-    // И выключение приложения
-
-
-    // !!! Убраться в коде :)
-
-    // добавить стиль для нажатых кнопок+
-    // добавить изменение цвета при наведении на TOP кнопки+
-    // Понять какой цвет менять если мы дома+
     // размытие фона за камерой (убрать синий)
-
-
-    // алгоритм поиска и обновления камеры
-
 
     // каждый раз когда прошел, запоминать дом
     // если уже дома - не искать дом
     // оптимизировать алгоритм запоминания дома (в разные стороны ближе от середины) (подумать)
-
-    // добавить картинки
-
 
     public partial class MainWindow : Window
     {
@@ -69,13 +35,13 @@
         {
             InitializeComponent();
             _defaultButtonStyle = buttonRightDir.Style;
-
+            
             CircularControl = new CircularControl(this);
             sliderControl.Content = CircularControl;
-
+            
             CameraUserControl = new CameraUserControl();
             cameraBoxControl.Content = CameraUserControl;
-
+            
             _positionTimer = new DispatcherTimer();
             _positionTimer.Interval = TimeSpan.FromMilliseconds(50);
             _positionTimer.Tick += PositionTimer_Tick;
@@ -86,7 +52,7 @@
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            CameraUserControl.StartCameraThread();
+            CameraUserControl?.StartCameraThread();
         }
 
         private void Window_Activated(object sender, EventArgs e)
@@ -99,10 +65,19 @@
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            if (_isConnected)
+
+            CameraUserControl?.StopCameraThread();
+            CameraUserControl.IsEnabled = false;
+
+            if (_serialPort.IsOpen && _isConnected)
             {
-                DisconnectFromArduino();
+                _serialPort.WriteLine($"stop");
+
+                // TODO зависает (проблема по потокам??)
+                //DisconnectFromArduino();
             }
+
+            Application.Current.Shutdown();
         }
 
         public void CallbackHandlerFromCircular(double angleAbsolute)
@@ -110,6 +85,8 @@
             // Fix value by reverse direction
             var value = 360 - angleAbsolute;
             var currentAngle = Convert.ToDouble(Position.Replace('.', ','));
+
+            // TODO испр кратчайший путь (см. Егор)
             value = value - currentAngle;
 
             try
@@ -190,7 +167,10 @@
             try
             {
                 _positionTimer.Stop();
-                _serialPort.Close();
+                if (_serialPort.IsOpen)
+                {
+                    _serialPort.Close();
+                }
 
                 _isConnected = false;
             }

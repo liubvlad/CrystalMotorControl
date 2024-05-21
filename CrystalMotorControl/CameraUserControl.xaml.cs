@@ -12,6 +12,8 @@
 
     public partial class CameraUserControl : UserControl
     {
+        private Thread _thread;
+
         private VideoCapture _capture = null;
         private DsDevice[] webCams = null;
         private int selectedCameraId = 0;
@@ -26,16 +28,22 @@
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            
         }
 
         public void StartCameraThread()
         {
-            new Thread(() =>
+            _thread = new Thread(() =>
             {
                 Thread.CurrentThread.IsBackground = true;
                 InitCameraCapture();
-            }).Start();
+            });
+            _thread?.Start();
+        }
+
+        public void StopCameraThread()
+        {
+            _capture?.Release();
+            _capture?.Stop();
         }
 
         private void InitCameraCapture()
