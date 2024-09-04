@@ -132,6 +132,8 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="res\refresh.png" />
+    <Resource Include="res\full_screen.png" />
     <Resource Include="icon.ico" />
     <Content Include="libopencv_core-409.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

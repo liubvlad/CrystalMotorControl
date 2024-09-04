@@ -41,7 +41,8 @@
             
             CameraUserControl = new CameraUserControl();
             cameraBoxControl.Content = CameraUserControl;
-            
+            camerasComboBox.ItemsSource = CameraUserControl.CamerasNames;
+
             _positionTimer = new DispatcherTimer();
             _positionTimer.Interval = TimeSpan.FromMilliseconds(50);
             _positionTimer.Tick += PositionTimer_Tick;
@@ -52,7 +53,13 @@
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            CameraUserControl?.StartCameraThread();
+            try
+            {
+                CameraUserControl?.StartCameraThread();
+                // Может долго грузиться окно
+                //camerasComboBox.SelectedIndex = CameraUserControl.SelectedCameraId;
+            }
+            catch { }
         }
 
         private void Window_Activated(object sender, EventArgs e)
@@ -66,16 +73,20 @@
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
 
-            CameraUserControl?.StopCameraThread();
-            CameraUserControl.IsEnabled = false;
-
-            if (_serialPort.IsOpen && _isConnected)
+            try
             {
-                _serialPort.WriteLine($"stop");
+                CameraUserControl?.StopCameraThread();
+                CameraUserControl.IsEnabled = false;
 
-                // TODO зависает (проблема по потокам??)
-                //DisconnectFromArduino();
+                if (_serialPort.IsOpen && _isConnected)
+                {
+                    _serialPort.WriteLine($"stop");
+
+                    // TODO зависает (проблема по потокам??)
+                    //DisconnectFromArduino();
+                }
             }
+            catch { }
 
             Application.Current.Shutdown();
         }
@@ -266,22 +277,26 @@
 
         private void buttonStartStop_Click(object sender, RoutedEventArgs e)
         {
-            State = State == MoveState.Stop ? MoveState.Moving : MoveState.Stop;
-            
-            if (State == MoveState.Moving)
+            try
             {
-                // START
-                var value = 1;
-                var sign = Direction == Directions.Right ? "-" : "";
-                _serialPort.WriteLine($"running {sign}{value}");
-            }
-            else if (State == MoveState.Stop)
-            {
-                // STOP
-                _serialPort.WriteLine($"stop");
-            }
+                State = State == MoveState.Stop ? MoveState.Moving : MoveState.Stop;
 
-            VisualMovingButtons();
+                if (State == MoveState.Moving)
+                {
+                    // START
+                    var value = 1;
+                    var sign = Direction == Directions.Right ? "-" : "";
+                    _serialPort.WriteLine($"running {sign}{value}");
+                }
+                else if (State == MoveState.Stop)
+                {
+                    // STOP
+                    _serialPort.WriteLine($"stop");
+                }
+
+                VisualMovingButtons();
+            }
+            catch { }
         }
 
         private void ButtonLeftDir_Click(object sender, RoutedEventArgs e)
@@ -358,6 +373,61 @@
                     // TODO fix textBoxInput
                     _serialPort.WriteLine($"moveDeg {sign}{textBoxInput.Text}");
                 }
+            }
+            catch { }
+        }
+
+        private bool _isCameraFullScreen = false;
+        private void buttonFullScreen_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_isCameraFullScreen)
+            {
+                Grid.SetRow(cameraBorder, 0);
+                Grid.SetColumn(cameraBorder, 0);
+
+                Grid.SetRowSpan(cameraBorder, 3);
+                Grid.SetColumnSpan(cameraBorder, 2);
+
+                cameraBorder.Margin = new Thickness(0);
+
+                _isCameraFullScreen = true;
+            }
+        }
+
+        private void cameraBoxControl_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (_isCameraFullScreen)
+            {
+                Grid.SetRow(cameraBorder, 1);
+                Grid.SetColumn(cameraBorder, 0);
+
+                Grid.SetRowSpan(cameraBorder, 1);
+                Grid.SetColumnSpan(cameraBorder, 1);
+
+                cameraBorder.Margin = new Thickness(15, 0, 25, 25);
+
+                _isCameraFullScreen = false;
+            }
+        }
+
+        private void camerasComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                if (camerasComboBox.SelectedIndex != -1)
+                {
+                    CameraUserControl.SetCameraDevice(camerasComboBox.SelectedItem.ToString());
+                }
+            }
+            catch { }
+        }
+
+        private void buttonRefreshCameras_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                camerasComboBox.SelectedIndex = -1;
+                CameraUserControl.RefreshCameras();
             }
             catch { }
         }

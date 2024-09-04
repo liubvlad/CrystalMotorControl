@@ -113,7 +113,7 @@
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="60"/>
+            <RowDefinition Height="70"/>
             <RowDefinition Height="3*"/>
             <RowDefinition Height="2*"/>
         </Grid.RowDefinitions>
@@ -126,16 +126,43 @@
                     Grid.Column="0"
                     Orientation="Horizontal" 
                     Margin="10">
-            <TextBlock Text="Статус подключения: "
-                       FontWeight="Bold"
-                       VerticalAlignment="Center"/>
-            <Ellipse x:Name="connectedIndicator" 
-                     Width="30" 
-                     Height="30" 
-                     Fill="Red"
-                     Stroke="Black"
-                     StrokeThickness="2"
-                     Margin="5"/>
+            <StackPanel Orientation="Horizontal" >
+                <TextBlock Text="Статус подключения: "
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"/>
+                <Ellipse x:Name="connectedIndicator" 
+                            Width="30" 
+                            Height="30" 
+                            Fill="Red"
+                            Stroke="Black"
+                            StrokeThickness="2"
+                            Margin="5"/>
+            </StackPanel>
+
+            <DockPanel>
+                <TextBlock Text="   Камера: "
+                           VerticalAlignment="Center"/>
+                <ComboBox x:Name="camerasComboBox" 
+                          MinWidth="200" 
+                          MaxWidth="200" 
+                          SelectionChanged="camerasComboBox_SelectionChanged"/>
+
+                <Button x:Name="buttonRefreshCameras" 
+                        Grid.Row="1" 
+                        Grid.Column="0" 
+                        Margin="10 0 0 0" 
+                        Click="buttonRefreshCameras_Click">
+                    <Image Source="res/refresh.png" Margin="5"/>
+                </Button>
+                
+                <Button x:Name="buttonFullScreen" 
+                        Grid.Row="1" 
+                        Grid.Column="0" 
+                        Margin="10 0 0 0" 
+                        Click="buttonFullScreen_Click">
+                    <Image Source="res/full_screen.png" Margin="5"/>
+                </Button>
+            </DockPanel>
         </StackPanel>
 
         <StackPanel Grid.Row="0"
@@ -146,22 +173,10 @@
             <TextBlock Text="Текущее положение: " Margin="5"/>
             <TextBlock x:Name="tbPos" 
                        Text="{Binding Position, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
-                       Margin="5"
+                       Margin="10"
                        />
 
         </StackPanel>
-
-        <Border Grid.Row="1" 
-                Grid.Column="0"
-                BorderThickness="3"
-                BorderBrush="#6886aa"
-                Background="#6886aa"
-                
-                Margin="15 0 25 25"
-                CornerRadius="30"
-                >
-            <UserControl x:Name="cameraBoxControl"/>
-        </Border>
 
 
         <Border Grid.Row="1" 
@@ -285,28 +300,18 @@
         </Grid>
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-       
-
-
-        
-
-
-        
+        <Border x:Name="cameraBorder"
+                Grid.Row="1" 
+                Grid.Column="0"
+                BorderThickness="3"
+                BorderBrush="#6886aa"
+                Background="#6886aa"
+                
+                Margin="15 0 25 25"
+                CornerRadius="30"
+                >
+            <UserControl x:Name="cameraBoxControl" MouseDown="cameraBoxControl_MouseDown"/>
+        </Border>
 
     </Grid>
 </Window>

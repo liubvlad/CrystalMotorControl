@@ -1,8 +1,10 @@
 ﻿namespace CrystalMotorControl
 {
     using System;
+    using System.Collections.ObjectModel;
     using System.Drawing;
     using System.IO;
+    using System.Linq;
     using System.Threading;
     using System.Windows;
     using System.Windows.Controls;
@@ -16,26 +18,69 @@
 
         private VideoCapture _capture = null;
         private DsDevice[] webCams = null;
-        private int selectedCameraId = 0;
+
+        public int SelectedCameraId { get; private set; } = 0;
+        public ObservableCollection<string> CamerasNames { get; private set; } = new ObservableCollection<string>();
 
         public CameraUserControl()
         {
             InitializeComponent();
+            RefreshCameras();
+        }
+
+        public void RefreshCameras()
+        {
+            // Если необходимо по ТЗ
+            _capture?.Stop();
 
             webCams = DsDevice.GetDevicesOfCat(FilterCategory.VideoInputDevice);
-            selectedCameraId = webCams.Length - 1;
+            SelectedCameraId = webCams.Length - 1;
+
+            CamerasNames.Clear();
+            foreach (var item in webCams.Select(x => x.Name)) 
+            {
+                CamerasNames.Add(item);
+            }
         }
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
         }
 
-        public void StartCameraThread()
+        public void SetCameraDevice(string cameraName)
+        {
+            try
+            {
+                if (webCams.Length > 0)
+                {
+                    int newIndex = -1;
+                    foreach (var webCam in webCams)
+                    {
+                        newIndex++;
+                        if (webCam.Name == cameraName)
+                        {
+                            SelectedCameraId = newIndex;
+                            InitCameraCapture();
+                            return;
+                        }
+                    }
+
+                    // Если не нашел камеру
+                    _capture?.Stop();
+                }
+            }
+            catch
+            {
+                RefreshCameras();
+            }
+        }
+
+        public void StartCameraThread(bool initCapture = false)
         {
             _thread = new Thread(() =>
             {
                 Thread.CurrentThread.IsBackground = true;
-                InitCameraCapture();
+                if (initCapture) InitCameraCapture();
             });
             _thread?.Start();
         }
@@ -54,7 +99,7 @@
                 {
                     _capture?.Stop();
 
-                    _capture = new VideoCapture(selectedCameraId);
+                    _capture = new VideoCapture(SelectedCameraId);
                     _capture.ImageGrabbed += _capture_ImageGrabbed;
 
                     _capture.Start();
@@ -82,15 +127,18 @@
 
         private void cameraBox_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
+            return;
+
             try
             {
-                webCams = DsDevice.GetDevicesOfCat(FilterCategory.VideoInputDevice);
+                RefreshCameras();
+
                 if (webCams.Length > 0)
                 {
-                    selectedCameraId--;
-                    if (selectedCameraId < 0)
+                    SelectedCameraId--;
+                    if (SelectedCameraId < 0)
                     {
-                        selectedCameraId = webCams.Length - 1;
+                        SelectedCameraId = webCams.Length - 1;
                     }
 
                     InitCameraCapture();
