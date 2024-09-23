@@ -371,7 +371,7 @@
                     // Отправляем команду "влево" с указанным значением
                     var sign = Direction == Directions.Right ? "-" : "";
                     // TODO fix textBoxInput
-                    _serialPort.WriteLine($"moveDeg {sign}{textBoxInput.Text}");
+                    _serialPort.WriteLine($"moveDeg {sign}{textBoxInput.Text.Replace(',', ',')}");
                 }
             }
             catch { }

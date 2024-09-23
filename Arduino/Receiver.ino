@@ -89,7 +89,7 @@ void serialEvent() {
       stepper.setTargetDeg(moveDegTo);
     }
     else if (command == "moveDeg") {
-      int32_t moveDeg = value.toInt();
+      float moveDeg = value.toFloat();
       stepper.setTargetDeg(moveDeg, RELATIVE);
     }
 
